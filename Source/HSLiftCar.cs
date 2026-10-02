@@ -10,6 +10,8 @@ public class HSLiftCell
     public BlockValue Bv;
     public sbyte Density;
     public TextureFullArray Tex;
+    [JsonIgnore]
+    public TileEntity Te;
 }
 
 public class HSLiftJournalCell
@@ -140,6 +142,19 @@ public static class HSLiftCar
         if (chunk == null) return "chunk not loaded at " + pos;
         var bv = world.GetBlock(pos);
         int lx = World.toBlockXZ(pos.x), ly = World.toBlockY(pos.y), lz = World.toBlockXZ(pos.z);
+        TileEntity teCopy = null;
+        if (bv.Block.HasTileEntity && !bv.ischild)
+        {
+            try
+            {
+                var te = world.GetTileEntity(pos);
+                if (te != null) teCopy = te.Clone();
+            }
+            catch (Exception e)
+            {
+                HSLiftDebug.Warn("Could not copy tile entity at " + pos + ": " + e.Message);
+            }
+        }
         cells.Add(new HSLiftCell
         {
             Dx = pos.x - D.MinX,
@@ -147,7 +162,8 @@ public static class HSLiftCar
             Dz = pos.z - D.MinZ,
             Bv = bv,
             Density = chunk.GetDensity(lx, ly, lz),
-            Tex = chunk.GetTextureFullArray(lx, ly, lz)
+            Tex = chunk.GetTextureFullArray(lx, ly, lz),
+            Te = teCopy
         });
         return null;
     }
@@ -226,8 +242,6 @@ public static class HSLiftCar
                 if (!InBox(parent, baseY)) return name + " at " + pos + " sticks out of the " + (D.IsVehicleType ? "platform" : "car box");
                 continue;
             }
-            if (block.HasTileEntity && !IsInsidePanel(block) && !IsMovableDoor(world, pos))
-                return DisplayName(bv) + " (" + Where(pos) + ") is a storage or powered block and can't ride in the car; doors and hatches can";
             if (block.isOversized) return name + " at " + pos + " is an oversized block (not supported in v0.1)";
             if (block.isMultiBlock)
             {
@@ -315,15 +329,6 @@ public static class HSLiftCar
         if (allowPassThrough && (IsPassThrough(bv) || IsRidePiece(bv))) return null;
         HSLiftDebug.Verbose("Obstruction " + name + " at " + pos);
         return DisplayName(bv) + " " + what + " (" + Where(pos) + ")";
-    }
-
-    // Doors and hatches only hold open/lock state, which a fresh tile entity resets safely (closed, unlocked).
-    // Anything with storage would lose its contents, so it is refused.
-    static bool IsMovableDoor(World world, Vector3i pos)
-    {
-        var te = world.GetTileEntity(pos) as TileEntityComposite;
-        if (te == null) return false;
-        return te.GetFeature<TEFeatureDoor>() != null && te.GetFeature<TEFeatureStorage>() == null;
     }
 
     static string DisplayName(BlockValue bv)
@@ -613,8 +618,31 @@ public static class HSLiftCar
             place.Add(c);
         }
         ApplyLayered(world, baseY, place, false);
+        RestoreTileEntities(world, baseY, place);
         HSLiftDebug.Verbose("Placed " + place.Count + " car blocks back at Y" + baseY + " (walls first, then floor and ceiling; " + (cells.Count - place.Count) + " left as pass-through sheets)");
         return null;
+    }
+
+    static void RestoreTileEntities(World world, int baseY, List<HSLiftCell> cells)
+    {
+        if (world == null || cells == null) return;
+        foreach (var c in cells)
+        {
+            if (c.Te == null) continue;
+            var p = Pos(c, baseY);
+            var dest = world.GetTileEntity(p);
+            if (dest == null) continue;
+            try
+            {
+                dest.CopyFrom(c.Te);
+                dest.localChunkPos = new Vector3i(World.toBlockXZ(p.x), World.toBlockY(p.y), World.toBlockXZ(p.z));
+                dest.SetModified();
+            }
+            catch (Exception e)
+            {
+                HSLiftDebug.Warn("Could not restore " + c.Bv.Block.GetBlockName() + " at " + p + ": " + e.Message);
+            }
+        }
     }
 
     static Vector3i Pos(HSLiftCell c, int baseY)
@@ -673,12 +701,26 @@ public static class HSLiftCar
                     // Own copies of the maps, taken while the real block still exists. After RemoveFromWorld
                     // the game unloads the shared textures and the moving copy would go magenta without this.
                     pin.Keep(model, c.Bv.Block is BlockHSLiftOutsidePanel || c.Bv.Block is BlockHSLiftInsidePanel);
+                    foreach (var lit in model.GetComponentsInChildren<Light>(true)) lit.enabled = true;
                 }
             }
             catch (Exception e)
             {
                 HSLiftDebug.Warn("Model for " + c.Bv.Block.GetBlockName() + " failed: " + e.Message);
             }
+            try
+            {
+                byte lv = c.Bv.Block.GetLightValue(c.Bv);
+                if (lv > 0 && holder.GetComponentInChildren<Light>(true) == null)
+                {
+                    var lit = holder.AddComponent<Light>();
+                    lit.type = LightType.Point;
+                    lit.range = 8f;
+                    lit.intensity = Mathf.Clamp01(lv / 15f) * 1.4f;
+                    lit.color = Color.white;
+                }
+            }
+            catch { }
 
             if (!withColliders || !c.Bv.Block.IsCollideMovement || IsRidePiece(c.Bv)) continue;
             // Same per-block movement bounds the game uses (Block.GetCollisionAABB): rotated, relative to the block corner.

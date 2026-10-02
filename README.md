@@ -103,11 +103,11 @@ Admin: `hslift status` lists what is still missing.
 | Landing elevator / garage door | Stays |
 | Inside panel | Rides |
 | Outside panel | Stays (register it) |
-| Chests, generators, wires, lanterns | Do not put these in the car box |
+| Chests, workstations, lanterns, a generator, wires | Ride if they are inside the car box (terrain / dirt does not) |
 
 Do **not** build cabin **walls** out of sheets.
 
-Lanterns and other block lights go dark while the car is moving (the real block is lifted out of the world). Put lights on the shaft, not in the car, if you need light in transit.
+Anything you place **inside the car box** rides with it, including chests and lanterns. Terrain / dirt cannot. Keep the lift’s power wire on an **outside** panel.
 
 Floor scheme (menus and signs): default **GB** is G, 1, 2. **US** shows G as 1, 1 as 2. Set `"FloorScheme": "us"` in `HSLift.json` and restart, or `hslift scheme us`.
 

@@ -49,14 +49,15 @@ Need **at least two** solid shaft walls against the car (the building around it)
 
 ---
 
-## 4. Do not put these in the car box
+## 4. Stuff you put in the car
 
-- Chests, crates, workstations  
-- Generators, battery banks, **wires**  
-- **Lanterns / player lights / any powered light**  
-- Terrain / dirt  
+If it is **inside the two corners**, it **rides**: chests, crates, workstations, lanterns, a generator, wires, hats on the floor — whatever you placed.
 
-Powered and storage blocks are refused (the car will not leave). Lights that do get copied are only a mesh — **world light dies the moment the real block is lifted**.
+Keep **terrain / dirt** out (the game treats that as ground, not a build). Oversized blocks that stick out of the box still will not go.
+
+**Lift power** still comes from a registered **outside** panel on the shaft. A generator in the car is cargo; it does not replace that wire.
+
+Lanterns ride and stay lit on the moving copy. World block-light comes back when the car parks.
 
 ---
 
