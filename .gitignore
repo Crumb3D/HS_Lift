@@ -1,0 +1,27 @@
+# Live world / lift save — the game writes this on first load
+HSLift.json
+HSLift.journal.json
+HSLift.*.journal.json
+
+# Local build paths (copy Directory.Build.props.example)
+Source/Directory.Build.props
+
+# Compiler output
+Source/obj/
+Source/bin/
+*.dll.new
+
+# Local tooling
+.codegpt-game.json
+.vs/
+*.user
+*.suo
+
+# Old packs
+*.rar
+HS_Lift-v*.zip
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

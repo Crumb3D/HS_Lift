@@ -1,0 +1,63 @@
+<configs>
+	<append xpath="/items">
+
+		<!-- Readable in-game handbook. Hold and use; it is not consumed. -->
+		<item name="hsliftHandbook">
+			<property name="Extends" value="blankNoteMaster"/>
+			<property name="CreativeMode" value="Player"/>
+			<property name="DescriptionKey" value="hsliftHandbookDesc"/>
+			<property name="CustomIcon" value="questMaster"/>
+			<property name="CustomIconTint" value="c8d0d8"/>
+			<property name="NoScrapping" value="true"/>
+			<property name="Stacknumber" value="1"/>
+			<property name="EconomicValue" value="10"/>
+			<property name="SellableToTrader" value="false"/>
+			<property name="SoundPickup" value="map_grab"/>
+			<property name="SoundPlace" value="map_place"/>
+			<property name="Group" value="Science,TCScience"/>
+			<property name="FilterTags" value="MC_playerBlocks,SC_electrical"/>
+			<property class="Action0">
+				<property name="Class" value="Eat"/>
+				<property name="Consume" value="false"/>
+				<property name="Delay" value="0.5"/>
+				<property name="UseAnimation" value="false"/>
+				<property name="Sound_start" value="read_mod"/>
+				<property name="Sound_in_head" value="true"/>
+				<property name="PromptTitle" value="hsliftHandbook"/>
+				<property name="PromptDescription" value="hsliftHandbookText"/>
+			</property>
+		</item>
+
+		<item name="hsliftTool">
+			<property name="Tags" value="tool,noMods,electricianSkill"/>
+			<property name="CreativeMode" value="Player"/>
+			<property name="HoldType" value="29"/>
+			<property name="Meshfile" value="@:Other/Items/Tools/wrenchPrefab.prefab"/>
+			<property name="DropMeshfile" value="@:Other/Items/Misc/sack_droppedPrefab.prefab"/>
+			<property name="CustomIcon" value="meleeToolSalvageT1Wrench"/>
+			<property name="CustomIconTint" value="c8d0d8"/>
+			<property name="TintColor" value="200, 208, 216"/>
+			<property name="Material" value="Mmetal"/>
+			<property name="DescriptionKey" value="hsliftToolDesc"/>
+			<property name="UnlockedBy" value="craftingElectrician"/>
+			<property name="Stacknumber" value="1"/>
+			<property name="DegradationBreaksAfter" value="false"/>
+			<property name="EconomicValue" value="60"/>
+			<property name="SellableToTrader" value="false"/>
+			<property name="SoundUnholster" value="weapon_unholster"/>
+			<property name="SoundHolster" value="weapon_holster"/>
+			<property name="SoundPickup" value="wrench_grab"/>
+			<property name="SoundPlace" value="wrench_place"/>
+			<property class="Action0">
+				<property name="Class" value="HSLiftTool, HSLift"/>
+			</property>
+			<!-- Hold E checks Action1 (GetHoldingSecondary).HasRadial. Action0 alone never opens the wheel. -->
+			<property class="Action1">
+				<property name="Class" value="HSLiftTool, HSLift"/>
+			</property>
+			<property name="Group" value="Science,TCScience,Tools/Traps"/>
+			<property name="FilterTags" value="MC_playerBlocks,SC_electrical"/>
+		</item>
+
+	</append>
+</configs>

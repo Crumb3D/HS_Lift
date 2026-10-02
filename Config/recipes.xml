@@ -1,0 +1,65 @@
+<configs>
+	<append xpath="/recipes">
+
+		<recipe name="hsliftHandbook" count="1">
+			<ingredient name="resourcePaper" count="1"/>
+		</recipe>
+
+		<!-- Button panels: same gating as the vanilla switch (workbench, Advanced Engineering, electrician unlock on the block). -->
+		<recipe name="hsliftOutsidePanel" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceMechanicalParts" count="2"/>
+			<ingredient name="resourceElectricParts" count="2"/>
+		</recipe>
+		<recipe name="hsliftOutsidePanelHalfBlock" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceMechanicalParts" count="2"/>
+			<ingredient name="resourceElectricParts" count="2"/>
+		</recipe>
+		<recipe name="hsliftOutsidePanelTenthBlock" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceMechanicalParts" count="2"/>
+			<ingredient name="resourceElectricParts" count="2"/>
+		</recipe>
+
+		<recipe name="hsliftInsidePanel" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceMechanicalParts" count="2"/>
+			<ingredient name="resourceElectricParts" count="2"/>
+		</recipe>
+		<recipe name="hsliftInsidePanelHalfBlock" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceMechanicalParts" count="2"/>
+			<ingredient name="resourceElectricParts" count="2"/>
+		</recipe>
+		<recipe name="hsliftInsidePanelPlateOffset" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceMechanicalParts" count="2"/>
+			<ingredient name="resourceElectricParts" count="2"/>
+		</recipe>
+
+		<recipe name="hsliftTool" count="1" craft_area="workbench" tags="perkAdvancedEngineering,learnable">
+			<ingredient name="resourceForgedIron" count="4"/>
+			<ingredient name="resourceMechanicalParts" count="2"/>
+			<ingredient name="resourceElectricParts" count="2"/>
+		</recipe>
+
+		<!-- Vanilla elevator doors (optional for a working lift). -->
+		<recipe name="elevatorDoor" count="1" craft_area="workbench" tags="workbenchCrafting">
+			<ingredient name="resourceForgedIron" count="15"/>
+			<ingredient name="resourceSpring" count="2"/>
+			<ingredient name="resourceMechanicalParts" count="4"/>
+		</recipe>
+		<recipe name="elevatorDoorTenthBlock" count="1" craft_area="workbench" tags="workbenchCrafting">
+			<ingredient name="resourceForgedIron" count="15"/>
+			<ingredient name="resourceSpring" count="2"/>
+			<ingredient name="resourceMechanicalParts" count="4"/>
+		</recipe>
+		<recipe name="elevatorDoorDouble" count="1" craft_area="workbench" tags="workbenchCrafting">
+			<ingredient name="resourceForgedIron" count="30"/>
+			<ingredient name="resourceSpring" count="4"/>
+			<ingredient name="resourceMechanicalParts" count="8"/>
+		</recipe>
+
+	</append>
+</configs>

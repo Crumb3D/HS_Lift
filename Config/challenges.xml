@@ -1,0 +1,47 @@
+<configs>
+	<append xpath="/challenges">
+
+		<challenge_category name="HSLift" title_key="hsliftChallengeCategory" icon="ui_game_symbol_challenge_category2"/>
+
+		<challenge_group category="HSLift" name="HSLiftHowTo" title_key="hsliftChallengeGroup"
+			reward_text_key="challenge_reward_100xp" link_challenges="true"/>
+
+		<challenge name="hslift_read" title_key="hsliftHandbook" icon="ui_game_symbol_challenge_basics_tutorial_challenge" group="HSLiftHowTo"
+			hint="hsliftHintRead"
+			short_description_key="hsliftReadShort" description_key="hsliftReadDesc">
+			<objective type="Craft" item="hsliftHandbook"/>
+			<objective type="UseItem" item="hsliftHandbook" count="1"/>
+		</challenge>
+
+		<challenge name="hslift_tool" title_key="hsliftTool" icon="ui_game_symbol_challenge_basics_craft_tools" group="HSLiftHowTo"
+			hint="hsliftHintTool"
+			short_description_key="hsliftToolShort" description_key="hsliftToolDesc">
+			<objective type="Craft" item="hsliftTool"/>
+		</challenge>
+
+		<challenge name="hslift_outsideCraft" title_key="hsliftOutsidePanel" icon="ui_game_symbol_challenge_basics_craft_tools" group="HSLiftHowTo"
+			hint="hsliftHintOutsideCraft"
+			short_description_key="hsliftOutsideCraftShort" description_key="hsliftOutsidePanelDesc">
+			<objective type="Craft" item="hsliftOutsidePanel" count="2"/>
+		</challenge>
+
+		<challenge name="hslift_outsidePlace" title_key="hsliftOutsidePlaceTitle" icon="ui_game_symbol_challenge_basics_craft_clothing" group="HSLiftHowTo"
+			hint="hsliftHintOutsidePlace"
+			short_description_key="hsliftOutsidePlaceShort" description_key="hsliftOutsidePlaceDesc">
+			<objective type="BlockPlace" block="hsliftOutsidePanel" count="2"/>
+		</challenge>
+
+		<challenge name="hslift_insideCraft" title_key="hsliftInsidePanel" icon="ui_game_symbol_challenge_basics_craft_tools" group="HSLiftHowTo"
+			hint="hsliftHintInsideCraft"
+			short_description_key="hsliftInsideCraftShort" description_key="hsliftInsidePanelDesc">
+			<objective type="Craft" item="hsliftInsidePanel"/>
+		</challenge>
+
+		<challenge name="hslift_insidePlace" title_key="hsliftInsidePlaceTitle" icon="ui_game_symbol_challenge_basics_wear_clothing" group="HSLiftHowTo"
+			hint="hsliftHintInsidePlace"
+			short_description_key="hsliftInsidePlaceShort" description_key="hsliftInsidePlaceDesc">
+			<objective type="BlockPlace" block="hsliftInsidePanel" count="1"/>
+		</challenge>
+
+	</append>
+</configs>

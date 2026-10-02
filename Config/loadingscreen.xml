@@ -1,0 +1,9 @@
+<configs>
+	<append xpath="/doc/tips">
+		<tip key="loadingTipHSLiftHandbook" />
+		<tip key="loadingTipHSLiftSetup" />
+		<tip key="loadingTipHSLiftCabin" />
+		<tip key="loadingTipHSLiftPower" />
+		<tip key="loadingTipHSLiftVehicle" />
+	</append>
+</configs>

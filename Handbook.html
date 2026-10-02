@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>HS Lift — Elevator Handbook</title>
+  <style>
+    :root {
+      --ink: #1c1a16;
+      --paper: #efe6d4;
+      --card: #f7f1e4;
+      --rule: #3d3a32;
+      --accent: #b8860b;
+      --caution: #c4a035;
+      --muted: #5c5648;
+      --steel: #2a3238;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Calibri", "Georgia", serif;
+      color: var(--ink);
+      background: var(--steel);
+      line-height: 1.45;
+    }
+    .wrap {
+      max-width: 820px;
+      margin: 0 auto;
+      background: var(--paper);
+      min-height: 100vh;
+      border-left: 8px solid var(--caution);
+    }
+    header.mast {
+      background: var(--ink);
+      color: var(--paper);
+      padding: 1.6rem 2rem 1.3rem;
+    }
+    header.mast p.kicker {
+      margin: 0 0 0.35rem;
+      letter-spacing: 0.28em;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      color: var(--caution);
+      font-family: Consolas, "Courier New", monospace;
+    }
+    header.mast h1 {
+      margin: 0 0 0.4rem;
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    header.mast .sub { margin: 0; color: #cfc6b4; font-size: 0.95rem; }
+    .toolbar {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      padding: 0.85rem 2rem;
+      background: #e4d9c2;
+      border-bottom: 1px solid #cfc3a8;
+    }
+    .toolbar button, .toolbar a.btn {
+      appearance: none;
+      border: 1px solid var(--rule);
+      background: var(--ink);
+      color: var(--paper);
+      padding: 0.45rem 0.9rem;
+      font: 600 0.85rem/1 "Segoe UI", sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .toolbar button.ghost, .toolbar a.ghost {
+      background: transparent;
+      color: var(--ink);
+    }
+    .toolbar button:hover, .toolbar a.btn:hover { filter: brightness(1.12); }
+    nav.toc {
+      padding: 1rem 2rem 0;
+      font-size: 0.92rem;
+    }
+    nav.toc ol { margin: 0.3rem 0 0; padding-left: 1.2rem; }
+    nav.toc a { color: var(--ink); }
+    main { padding: 0.5rem 2rem 3rem; }
+    h2 {
+      margin: 1.8rem 0 0.6rem;
+      font-size: 1.15rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border-bottom: 2px solid var(--ink);
+      padding-bottom: 0.25rem;
+    }
+    h3 { margin: 1.1rem 0 0.4rem; font-size: 1.02rem; }
+    p, li { font-size: 0.98rem; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin: 0.6rem 0 1rem;
+      background: var(--card);
+    }
+    th, td {
+      border: 1px solid #c5b89a;
+      padding: 0.4rem 0.55rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #ddd2b8; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; }
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: var(--card);
+      padding: 0.65rem 0.85rem;
+      margin: 0.8rem 0;
+    }
+    ol.setup { padding-left: 1.3rem; }
+    footer.col {
+      padding: 1rem 2rem 2rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    @media print {
+      body { background: #fff; }
+      .wrap { border: none; max-width: none; }
+      .toolbar, nav.toc { display: none !important; }
+      header.mast { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      a { color: inherit; text-decoration: none; }
+      @page { margin: 14mm 14mm 16mm; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="mast">
+      <p class="kicker">7 Days to Die · HS Lift</p>
+      <h1>Elevator Handbook</h1>
+      <p class="sub">You build the car. The mod only moves it. It will not break blocks to pass an obstruction.</p>
+    </header>
+    <div class="toolbar">
+      <button type="button" id="pdfBtn">Save as PDF</button>
+      <a class="btn" href="HS-Lift-Handbook.pdf" download="HS-Lift-Handbook.pdf">Download PDF</a>
+      <button type="button" class="ghost" id="printBtn">Print</button>
+      <a class="btn ghost" href="PLAYER_HANDBOOK.md">Markdown copy</a>
+    </div>
+    <nav class="toc">
+      <strong>Contents</strong>
+      <ol>
+        <li><a href="#craft">What you craft</a></li>
+        <li><a href="#tool">Setup tool</a></li>
+        <li><a href="#ped">Passenger lift</a></li>
+        <li><a href="#vehicle">Vehicle lift</a></li>
+        <li><a href="#build">Plates, sheets, pass-through</a></li>
+        <li><a href="#power">Power</a></li>
+        <li><a href="#ride">Calling, floors, doors</a></li>
+        <li><a href="#stuck">If it will not move</a></li>
+      </ol>
+    </nav>
+    <main>
+      <p>Craft the <strong>Elevator Handbook</strong> from <strong>1 paper</strong> and use it in-game (not consumed). Same walkthrough: <strong>Journal → Challenges → HS Lift</strong>. After a new <code>HSLift.dll</code>, restart the game.</p>
+
+      <h2 id="craft">1. What you craft</h2>
+      <table>
+        <thead><tr><th>Item</th><th>Where</th><th>What it is</th></tr></thead>
+        <tbody>
+          <tr><td>Elevator Handbook</td><td>1 paper, hand craft</td><td>This guide. Use it to read. Not used up.</td></tr>
+          <tr><td>Elevator Setup Tool</td><td>Workbench (electrician)</td><td>Hold it, aim at a <strong>placed</strong> block (wood through steel, not dirt), <strong>hold E</strong>.</td></tr>
+          <tr><td>Outside Button Panel</td><td>Workbench</td><td>One per floor, beside the shaft. Wire <strong>any one</strong> registered panel of that lift to a generator or battery bank.</td></tr>
+          <tr><td>Inside Button Panel</td><td>Workbench</td><td>Optional. In the car (passenger) or on the pad (vehicle). No wires. Do <strong>not</strong> register it.</td></tr>
+        </tbody>
+      </table>
+      <p>Vanilla <strong>elevator doors</strong> for passenger lifts. <strong>Garage / roll-up</strong> for vehicle lifts. Half-block and plate-offset panels sit flush on thin walls.</p>
+
+      <h2 id="tool">2. Setup tool (hold E)</h2>
+      <p>Aim at the block the command needs, then pick from the wheel. If you have more than one lift, choose <strong>Use Lift Here</strong> first so later commands edit the shaft you are looking at.</p>
+      <ol class="setup">
+        <li><strong>New Ped Lift</strong> / <strong>New Vehicle Lift</strong> — always a <strong>new</strong> lift. Never overwrites one you already registered.</li>
+        <li><strong>Use Lift Here</strong> — bind the aimed (or nearest) shaft.</li>
+        <li><strong>Set Corner 1</strong> / <strong>Set Corner 2</strong> — opposite corners. Passenger: the whole 3D cabin. Vehicle: the <strong>floor slab only</strong>, both corners the <strong>same height</strong>.</li>
+        <li><strong>Add Floor</strong> — park the car at that landing, aim at a floor block, name it (G, 1, 2, B1, …).</li>
+        <li><strong>Register Panel</strong> — <strong>outside</strong> wall buttons only. Never the inside panel.</li>
+        <li><strong>Finished editing</strong> — what is still missing, or Ready.</li>
+      </ol>
+      <p>Ground floor is created when both corners are set.</p>
+
+      <h2 id="ped">3. Passenger lift</h2>
+      <p>Build a <strong>3D cabin</strong>. Smallest interior <strong>1 wide × 2 high</strong>. Floor: any block. Walls and ceiling: <strong>plates</strong> and/or <strong>hatches</strong>. Mark opposite corners of that whole box. You need <strong>at least two shaft walls</strong>.</p>
+      <p>The mod places walls first, then floor, then ceiling, then interior, so the cabin does not collapse while it rebuilds.</p>
+      <h3>Doors</h3>
+      <ul>
+        <li>Cabin door and landing door on the same opening open and close together. A <strong>back set</strong> is optional and follows the others on that floor.</li>
+        <li>Locked until the car is here. A locked <strong>outside</strong> door <strong>calls</strong> the car.</li>
+        <li><strong>Cabin doors</strong> stay shut if there is <strong>no walkable floor</strong> outside (drop or a wall in your face). Outside landing doors are <em>not</em> locked by that check.</li>
+        <li><strong>Hold E</strong> on the inside panel and pick a floor. A <strong>tap</strong> of E does not send the car.</li>
+        <li>No inside panel: <strong>hold E</strong> on the cabin door while standing in the car. Closing the door does not send the car.</li>
+      </ul>
+      <p>Players, vehicles, and loot inside the cabin ride with it.</p>
+
+      <h2 id="vehicle">4. Vehicle lift</h2>
+      <ul>
+        <li><strong>Platform only</strong> — both corners at the same Y. No cabin box.</li>
+        <li>One garage / roll-up per landing. Those doors <strong>stay put</strong>.</li>
+        <li>Pad here: E opens that door. Pad elsewhere: E calls it; the door opens on arrival.</li>
+        <li>Inside panel <strong>on the pad</strong>. Do not register it.</li>
+        <li>The truck and anything on the pad ride.</li>
+        <li>Do <strong>not</strong> build the pad out of <strong>Plate Double</strong> (pass-through). Use full cubes or any solid floor.</li>
+      </ul>
+
+      <h2 id="build">5. Plates, sheets, pass-through</h2>
+      <table>
+        <thead><tr><th>You place</th><th>What the lift does</th></tr></thead>
+        <tbody>
+          <tr><td>Floor — any solid</td><td>Rides with the car.</td></tr>
+          <tr><td>Walls / ceiling — plates or hatches</td><td>Ride. Regular plates are not pass-through.</td></tr>
+          <tr><td>Sheets (Wood - Sheet / billboard)</td><td>Pass-through. Stay at the landing. Use around button panels.</td></tr>
+          <tr><td>Plate Double</td><td>Pass-through. Not for a vehicle pad.</td></tr>
+          <tr><td>Round ladder, wall letters / numbers</td><td>Pass-through.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">Do not build cabin <strong>walls</strong> out of sheets — only the floor will move and the car will fall apart.</div>
+
+      <h2 id="power">6. Power</h2>
+      <ul>
+        <li>Register only outside panels that belong to <strong>this</strong> shaft.</li>
+        <li>Unregistered panels do nothing and cannot steal power from another lift.</li>
+        <li>Wire <strong>any one</strong> registered outside panel. That powers the whole lift. Other shafts need their own circuit.</li>
+      </ul>
+
+      <h2 id="ride">7. Calling, floors, doors</h2>
+      <ul>
+        <li><strong>Outside button:</strong> tap E to call (or open doors if the car is already here).</li>
+        <li><strong>Inside panel:</strong> hold E, choose a floor. Tap does nothing.</li>
+        <li>The car will not leave while something is in the <strong>doorway</strong>. Sheets and plate doubles do not count as blocked.</li>
+        <li>Doors auto-close after <strong>20 seconds</strong> (real time) if the opening is clear.</li>
+        <li>Walk out while they are closing: they <strong>open again</strong>, then retry when you are clear.</li>
+        <li><strong>Floor letter:</strong> vanilla wall letter/number within 3 blocks of each outside door. They show the floor the car is on, including while it is passing.</li>
+      </ul>
+
+      <h2 id="stuck">8. If it will not move</h2>
+      <ul>
+        <li><strong>Finished editing</strong> lists what is missing.</li>
+        <li>No power, or the wrong lift’s panel.</li>
+        <li>Shaft blocked — it stops; it will not chew through your build.</li>
+        <li>Doors cannot close — wait until the opening is clear.</li>
+        <li>Fewer than two supporting shaft walls on a passenger car.</li>
+        <li>Restart the game after a new DLL.</li>
+      </ul>
+      <p>Admins: console <code>hslift</code>. <code>hslift debris</code> clears dirt and rubble in the footprint (not the car, doors, panels, or pass-through).</p>
+    </main>
+    <footer class="col">HS Lift · open this file from the Mods/HS_Lift folder · Print dialog: choose “Save as PDF” and a file name such as HS-Lift-Handbook.pdf</footer>
+  </div>
+  <script>
+    function savePdf() {
+      document.title = "HS-Lift-Handbook";
+      window.print();
+    }
+    document.getElementById("pdfBtn").addEventListener("click", savePdf);
+    document.getElementById("printBtn").addEventListener("click", savePdf);
+  </script>
+</body>
+</html>

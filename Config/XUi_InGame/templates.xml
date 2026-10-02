@@ -1,0 +1,8 @@
+<configs>
+	<!-- Hidden on every radial; the setup tool turns it on for steps that still need doing. -->
+	<append xpath="/templates/radial_entry/rect">
+		<sprite depth="5" name="hsliftNeedSetup" sprite="ui_game_symbol_assemble" atlas="UIAtlas"
+			width="16" height="16" pos="24,24" pivot="center"
+			color="255,200,64,255" visible="false" foregroundlayer="true" />
+	</append>
+</configs>

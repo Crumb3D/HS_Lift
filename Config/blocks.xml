@@ -1,0 +1,111 @@
+<configs>
+	<append xpath="/blocks">
+
+		<!-- Outside button panel: powered, wired from a generator/battery bank. At least two (one per stop) = working lift. -->
+		<block name="hsliftOutsidePanel">
+			<property name="CreativeMode" value="Player" />
+			<property name="Class" value="HSLiftOutsidePanel, HSLift" />
+			<property name="RequiredPower" value="1" />
+			<property name="UnlockedBy" value="craftingElectrician" />
+			<property name="DisplayType" value="blockElectrical" />
+			<property name="CustomIcon" value="elevatorOutsideButtonPanel" />
+			<property name="DescriptionKey" value="hsliftOutsidePanelDesc" />
+			<property name="Material" value="Mmetal_weak" />
+			<property name="Shape" value="ModelEntity" />
+			<property name="Model" value="@:Entities/Doors/elevatorDoor/elevatorOutsideButtonPanelPrefab.prefab" />
+			<property name="ModelOffset" value="0,0,-0.5" />
+			<property name="MultiBlockDim" value="1,2,1" />
+			<property name="ImposterDontBlock" value="true" />
+			<property name="WaterFlow" value="permitted" />
+			<property name="Place" value="TowardsPlacerInverted" />
+			<property name="Collide" value="movement,melee,bullet,arrow,rocket" />
+			<property name="CanPickup" value="false" />
+			<property name="EconomicValue" value="60" />
+			<property name="MaxDamage" value="3000" />
+			<property class="RepairItems">
+				<property name="resourceForgedIron" value="2" />
+			</property>
+			<drop event="Harvest" name="terrStone" count="0" tool_category="Disassemble" />
+			<drop event="Harvest" name="resourceElectricParts" count="1" tag="salvageHarvest" />
+			<drop event="Destroy" name="resourceScrapIron" count="3,6" />
+			<drop event="Fall" name="scrapMetalPile" count="1" prob="0.75" stick_chance="1" />
+			<property name="SortOrder1" value="B155" />
+			<property name="SortOrder2" value="0100" />
+			<property name="Group" value="Science,TCScience" />
+			<property name="Tags" value="electricianSkill" />
+			<property name="FilterTags" value="MC_playerBlocks,SC_electrical" />
+		</block>
+
+		<block name="hsliftOutsidePanelHalfBlock">
+			<property name="Extends" value="hsliftOutsidePanel" />
+			<property name="ModelOffset" value="0,0,-1" />
+			<property name="SortOrder2" value="0101" />
+		</block>
+
+		<block name="hsliftOutsidePanelTenthBlock">
+			<property name="Extends" value="hsliftOutsidePanel" />
+			<property name="ModelOffset" value="0,0,-1.4" />
+			<property name="SortOrder2" value="0102" />
+		</block>
+
+		<!-- Inside panel: part of the car, rides with it, no wires. Optional. -->
+		<block name="hsliftInsidePanel">
+			<property name="CreativeMode" value="Player" />
+			<property name="Class" value="HSLiftInsidePanel, HSLift" />
+			<property name="UnlockedBy" value="craftingElectrician" />
+			<property name="DisplayType" value="blockMulti" />
+			<property name="CustomIcon" value="elevatorInsidePanel" />
+			<property name="DescriptionKey" value="hsliftInsidePanelDesc" />
+			<property name="Material" value="Mmetal_weak" />
+			<property name="Shape" value="ModelEntity" />
+			<property name="Model" value="@:Entities/Doors/elevatorDoor/elevatorInsidePanelPrefab.prefab" />
+			<property name="ModelOffset" value="-.25,0,0.5" />
+			<property name="MultiBlockDim" value="1,2,1" />
+			<property name="WaterFlow" value="permitted" />
+			<property name="Place" value="TowardsPlacerInverted" />
+			<property name="Collide" value="movement,melee,bullet,arrow,rocket" />
+			<property name="StabilitySupport" value="false" />
+			<property name="CanPickup" value="false" />
+			<property name="EconomicValue" value="60" />
+			<property name="MaxDamage" value="3000" />
+			<property class="RepairItems">
+				<property name="resourceForgedIron" value="2" />
+			</property>
+			<drop event="Harvest" name="terrStone" count="0" tool_category="Disassemble" />
+			<drop event="Harvest" name="resourceElectricParts" count="1" tag="salvageHarvest" />
+			<drop event="Destroy" name="resourceScrapIron" count="3,6" />
+			<drop event="Fall" name="scrapMetalPile" count="1" prob="0.75" stick_chance="1" />
+			<property name="SortOrder1" value="B155" />
+			<property name="SortOrder2" value="0103" />
+			<property name="Group" value="Science,TCScience" />
+			<property name="Tags" value="electricianSkill" />
+			<property name="FilterTags" value="MC_playerBlocks,SC_electrical" />
+		</block>
+
+		<block name="hsliftInsidePanelHalfBlock">
+			<property name="Extends" value="hsliftInsidePanel" />
+			<property name="ModelOffset" value="-.25,0,1" />
+			<property name="SortOrder2" value="0104" />
+		</block>
+
+		<block name="hsliftInsidePanelPlateOffset">
+			<property name="Extends" value="hsliftInsidePanel" />
+			<property name="ModelOffset" value="-.25,-1,.95" />
+			<property name="MultiBlockDim" value="1,1,1" />
+			<property name="SortOrder2" value="0105" />
+		</block>
+
+		<!-- Double elevator door: vanilla lists lockable first so E is lock/unlock like a crate. Door first = open/close. -->
+	</append>
+	<remove xpath="/blocks/block[@name='elevatorDoorDouble']/property[@class='CompositeFeatures']"/>
+	<insertAfter xpath="/blocks/block[@name='elevatorDoorDouble']/property[@name='Class']">
+		<property class="CompositeFeatures">
+			<property class="TEFeatureDoor">
+				<property name="OpenSound" value="doors_elevator_open" />
+				<property name="CloseSound" value="doors_elevator_close" />
+				<property name="LockedSound" value="door_elevator_locked" />
+			</property>
+			<property class="TEFeatureLockable" />
+		</property>
+	</insertAfter>
+</configs>
