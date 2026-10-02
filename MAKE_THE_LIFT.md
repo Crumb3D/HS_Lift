@@ -93,3 +93,5 @@ giveself elevatorDoorDouble 4
 ```
 
 Creative: search **Plate**, **Door Trim 1m**, **Door Trim Corner**, **Plate Corner**, **Hatch**, **Elevator**.
+
+On a server, put **HS_Lift** in the server Mods **and** every client Mods. One player sets the corners; everyone else sees and uses that car.

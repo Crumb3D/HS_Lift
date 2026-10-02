@@ -4,6 +4,9 @@ using System.Collections.Generic;
 // Shared setup used by the Elevator Setup Tool (hold E) and the admin-only hslift console command.
 public static class HSLiftSetup
 {
+    public static bool HasForcedAim;
+    public static Vector3i ForcedAim;
+
     public static void Tell(EntityPlayerLocal player, string msg)
     {
         if (string.IsNullOrEmpty(msg)) return;
@@ -13,6 +16,8 @@ public static class HSLiftSetup
 
     public static string Execute(string sub, string arg, string extra, EntityPlayerLocal player)
     {
+        if (HSLiftNet.IsRemoteClient && sub != "status" && sub != "list" && sub != "preview")
+            return HSLiftNet.SendSetup(sub, arg, extra, player);
         if (sub == "floor") return FloorCommand(arg, extra, player);
         if (sub == "go") return HSLiftController.RequestFloor(arg, "console") ?? "Going.";
         return Run(sub, arg, player);
@@ -379,6 +384,11 @@ public static class HSLiftSetup
     public static string AimedBlock(EntityPlayerLocal player, out Vector3i pos)
     {
         pos = Vector3i.zero;
+        if (HasForcedAim)
+        {
+            pos = ForcedAim;
+            return null;
+        }
         var world = GameManager.Instance.World;
         if (player == null) player = world != null ? world.GetPrimaryPlayer() : null;
         if (player == null) return "No local player.";

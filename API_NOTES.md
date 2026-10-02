@@ -34,4 +34,6 @@ Verified against `7DaysToDie_Data/Managed/Assembly-CSharp.dll` (3.2) with `Mods/
 ## Misc
 - `ConsoleCmdAbstract`: `getCommands`, `getDescription`, `getHelp`, `Execute(List<string>, CommandSenderInfo)`; output via `SdtdConsole.Instance.Output`.
 - `EntityPlayerLocal.HitInfo` (`WorldRayHitInfo.bHitValid`, `.hit.blockPos`).
-- `ModEvents.GameStartDone`, `WorldShuttingDown`; `GameManager.IsDedicatedServer`, `ConnectionManager.Instance.IsServer`.
+- `ModEvents.GameStartDone`, `WorldShuttingDown`, `PlayerSpawnedInWorld`; `GameManager.IsDedicatedServer`, `ConnectionManager.Instance.IsServer`.
+- Custom `NetPackage` + `NetPackageManager.GetPackage<T>()`, `ConnectionManager.SendPackage` / `SendToClientsOrServer`, `ClientInfo.SendPackage`. Register type in `knownPackageTypes` before `StartServer`.
+- `TEFeatureDoor.SetOpen` uses `SetBlockRPC` (door state syncs). `World.SetBlocksRPC` syncs car remove/place.

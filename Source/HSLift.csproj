@@ -98,6 +98,7 @@
     <Compile Include="HSLiftSounds.cs" />
     <Compile Include="HSLiftFloorMenu.cs" />
     <Compile Include="HSLiftActivation.cs" />
+    <Compile Include="HSLiftNet.cs" />
     <Compile Include="Patches\HSLiftDoorPatch.cs" />
     <Compile Include="Patches\HSLiftToolPatch.cs" />
     <Compile Include="Blocks\BlockHSLiftOutsidePanel.cs" />

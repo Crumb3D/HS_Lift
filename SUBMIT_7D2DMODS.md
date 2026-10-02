@@ -35,6 +35,7 @@ Do not tick 1.0, 2.0, or 3.3 Experimental unless you test those builds.
 ## Requirements
 
 - Harmony (`0_TFP_Harmony`, ships with 7 Days to Die)
+- Same `HS_Lift` folder on dedicated server and every client
 - Restart the game after install
 
 ## Credits
@@ -71,7 +72,7 @@ You build the cabin or the vehicle pad. The mod only moves that structure. It do
 - Sheets, Plate Double, other door trim, round ladders, and wall letters/numbers stay at the landing.
 
 **Install**
-Unzip to `Mods/HS_Lift/` so `ModInfo.xml` is inside that folder. Do not copy another player’s `HSLift.json`. Restart the game.
+Unzip to `Mods/HS_Lift/` so `ModInfo.xml` is inside that folder. Dedicated server and every client need the same folder. Do not copy another player’s `HSLift.json` — the server owns the live lift list. Restart the game.
 
 **Admin**
 Creative menu: search Elevator. Console: `giveself hsliftTool`, `hslift`, `hslift status`, `hslift scheme gb|us`, `hslift go G`, `hslift debris`.

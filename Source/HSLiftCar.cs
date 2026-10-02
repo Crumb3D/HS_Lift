@@ -653,6 +653,15 @@ public static class HSLiftCar
     // Moving copy of the car: block models (with paint) plus mesh colliders on the layer the player controller rides.
     public static GameObject BuildVisual(World world, List<HSLiftCell> cells, bool withColliders, int baseY)
     {
+        if (GameManager.IsDedicatedServer)
+        {
+            var empty = new GameObject("HSLiftCar_" + D.ElevatorId);
+            var erb = empty.AddComponent<Rigidbody>();
+            erb.isKinematic = true;
+            erb.useGravity = false;
+            empty.transform.position = UnityPos(baseY);
+            return empty;
+        }
         var root = new GameObject("HSLiftCar_" + D.ElevatorId);
         var rb = root.AddComponent<Rigidbody>();
         rb.isKinematic = true;
@@ -801,6 +810,8 @@ public static class HSLiftCar
     {
         get { return System.Runtime.InteropServices.Marshal.SizeOf(typeof(TextureFullArray)) / 8; }
     }
+
+    public static int NetTexChannels { get { return TexChannels; } }
 
     public static void WriteJournal(int baseY, List<HSLiftCell> cells)
     {

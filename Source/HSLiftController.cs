@@ -195,6 +195,11 @@ public class HSLiftController : MonoBehaviour
     // Outside panels only call the car to their own floor; the destination is chosen inside the car.
     public static string RequestFromOutsidePanel(Vector3i pos)
     {
+        if (HSLiftNet.IsRemoteClient)
+        {
+            HSLiftNet.SendUsePanel(pos);
+            return null;
+        }
         var lift = HSLiftConfiguration.RegisteredPanelOwner(pos);
         if (!Bind(lift))
             return "this panel is not registered (aim at it: hslift panel)";
@@ -217,6 +222,11 @@ public class HSLiftController : MonoBehaviour
     // Pressing a locked lift door calls the car to that door's floor, like its outside panel.
     public static string RequestFromLockedDoor(Vector3i doorPos)
     {
+        if (HSLiftNet.IsRemoteClient)
+        {
+            HSLiftNet.SendUseDoor(doorPos);
+            return null;
+        }
         var doorLift = HSLiftConfiguration.LiftForDoor(doorPos);
         if (!Bind(doorLift))
             return "this door is not part of a lift";
@@ -234,6 +244,11 @@ public class HSLiftController : MonoBehaviour
     // floorIndex is the hold-E menu slot. A plain press has no destination.
     public static string RequestFromInsidePanel(Vector3i pos, int floorIndex)
     {
+        if (HSLiftNet.IsRemoteClient)
+        {
+            HSLiftNet.SendUseInside(pos, floorIndex);
+            return null;
+        }
         if (!Bind(HSLiftConfiguration.LiftForInsidePanel(pos)))
             return "this inside panel is not part of the lift car";
         return RequestFromInside(floorIndex, "inside panel");
@@ -241,9 +256,26 @@ public class HSLiftController : MonoBehaviour
 
     public static string RequestFromDoorMenu(EntityPlayerLocal player, int floorIndex)
     {
+        if (HSLiftNet.IsRemoteClient)
+        {
+            var clientLift = HSLiftConfiguration.LiftForPlayer(player);
+            if (clientLift == null || !PlayerInCar(player)) return "stand inside the lift car to choose a floor";
+            HSLiftNet.SendUseFloor(clientLift.ElevatorId, 0, floorIndex);
+            return null;
+        }
         if (!Bind(HSLiftConfiguration.LiftForPlayer(player))) return "stand inside the lift car to choose a floor";
         if (!PlayerInCar(player)) return "stand inside the lift car to choose a floor";
         return RequestFromInside(floorIndex, "door menu");
+    }
+
+    public static string RequestInsideFloor(int floorIndex, string source)
+    {
+        return RequestFromInside(floorIndex, source);
+    }
+
+    public static string RequestMoveToY(int targetY, string source)
+    {
+        return RequestMoveTo(targetY, source);
     }
 
     static string RequestFromInside(int floorIndex, string source)
@@ -273,7 +305,11 @@ public class HSLiftController : MonoBehaviour
         {
             Ensure(D);
             if (instance == null) return "HSLift not started";
-            if (GameManager.IsDedicatedServer || !ConnectionManager.Instance.IsServer) return "v0.1 works in single-player or when you host";
+            if (HSLiftNet.IsRemoteClient)
+            {
+                HSLiftNet.SendUseFloor(D.ElevatorId, targetY, -1);
+                return null;
+            }
             if (IsMoving)
             {
                 HSLiftDebug.Verbose("Ignored " + source + " request: lift is " + State);
@@ -365,8 +401,7 @@ public class HSLiftController : MonoBehaviour
             LiftState = HSLiftState.Idle;
             Refuse(pendingSource, problem);
             HSLiftDoors.OpenAtCar(world);
-            var player = world.GetPrimaryPlayer();
-            if (player != null) GameManager.ShowTooltip(player, string.Format(Localization.Get("hsliftNotReady"), problem));
+            HSLiftNet.TellLocal(string.Format(Localization.Get("hsliftNotReady"), problem));
             return;
         }
         if (fromY == pendingTarget)
@@ -404,6 +439,7 @@ public class HSLiftController : MonoBehaviour
         LiftState = targetY > fromY ? HSLiftState.MovingUp : HSLiftState.MovingDown;
         StartMoveSound(root);
         nextPowerCheck = Time.time + PowerCheckInterval;
+        HSLiftNet.BroadcastMoveStart(D.ElevatorId, fromY, targetY, fromY, cells);
         HSLiftDebug.Info(string.Format("{0}: Y{1} -> Y{2} ({3} blocks, {4})", State, fromY, targetY, cells.Count, source));
     }
 
@@ -414,6 +450,19 @@ public class HSLiftController : MonoBehaviour
         try
         {
             Push();
+            if (!HSLiftNet.IsAuthority)
+            {
+                if (LiftState == HSLiftState.Idle || LiftState == HSLiftState.Error || LiftState == HSLiftState.Closing)
+                {
+                    move.Apply();
+                    return;
+                }
+                float beforeY = move.CurY;
+                bool done = move.Step(Time.fixedDeltaTime, D.SpeedBlocksPerSecond);
+                CarryRiders(beforeY, move.CurY - beforeY);
+                if (done) move.Apply();
+                return;
+            }
             if (LiftState == HSLiftState.Closing)
             {
                 var world = GameManager.Instance.World;
@@ -491,11 +540,18 @@ public class HSLiftController : MonoBehaviour
     // The player controller only rides layer-28 platforms, which its ground check can't see, so move riders with the car.
     void CarryPlayer(float carY, float dy)
     {
-        var player = GameManager.Instance.World.GetPrimaryPlayer();
-        var fp = player != null ? player.vp_FPController : null;
-        if (fp == null || player.AttachedToEntity != null) return;
-        if (!EntityOnCar(player, carY)) return;
-        fp.SetPosition(fp.Transform.position + new Vector3(0f, dy, 0f));
+        var world = GameManager.Instance != null ? GameManager.Instance.World : null;
+        var locals = world != null ? world.GetLocalPlayers() : null;
+        if (locals == null) return;
+        var delta = new Vector3(0f, dy, 0f);
+        for (int i = 0; i < locals.Count; i++)
+        {
+            var player = locals[i] as EntityPlayerLocal;
+            var fp = player != null ? player.vp_FPController : null;
+            if (fp == null || player.AttachedToEntity != null) continue;
+            if (!EntityOnCar(player, carY)) continue;
+            fp.SetPosition(fp.Transform.position + delta);
+        }
     }
 
     readonly List<Entity> riders = new List<Entity>();
@@ -515,7 +571,7 @@ public class HSLiftController : MonoBehaviour
         {
             var e = riders[i];
             if (e == null || e.AttachedToEntity != null) continue;
-            if (e is EntityPlayerLocal) continue;
+            if (e is EntityPlayer) continue;
             if (e is EntityFallingBlock) continue;
             if (!EntityOnCar(e, carY)) continue;
             e.SetPosition(e.position + delta, true);
@@ -540,6 +596,11 @@ public class HSLiftController : MonoBehaviour
         {
             Push();
             if (releasing != null && Time.time >= releaseAt) FinishRelease();
+            if (!HSLiftNet.IsAuthority)
+            {
+                if (preview != null && Time.time >= previewUntil) StopPreviewInternal();
+                return;
+            }
             TickAutoClose();
             TickReopenIfBlocked();
             if (preview != null)
@@ -549,7 +610,7 @@ public class HSLiftController : MonoBehaviour
             }
             if (Time.time < nextRetry) return;
             var world = GameManager.Instance != null ? GameManager.Instance.World : null;
-            if (world == null || world.GetPrimaryPlayer() == null) return;
+            if (world == null) return;
 
             if (recovering)
             {
@@ -636,6 +697,7 @@ public class HSLiftController : MonoBehaviour
         HSLiftCar.ClearJournal();
         StopMoveSound();
         PlayAt(D.ArriveSound, y);
+        HSLiftNet.BroadcastMoveEnd(D.ElevatorId, y);
         HSLiftDebug.Info("Arrived at Y" + y + " (" + HSLiftConfiguration.FloorLabel(y) + ")");
 
         // Keep the moving copy a moment so the player stays supported while the chunk rebuilds its collision.
@@ -720,6 +782,56 @@ public class HSLiftController : MonoBehaviour
 
     // --- shutdown ---
 
+    public static void BeginRemoteMove(string liftId, int parkedY, int targetY, float curY, List<HSLiftCell> captured)
+    {
+        var d = HSLiftConfiguration.ById(liftId);
+        if (!Bind(d) || captured == null || captured.Count == 0) return;
+        var c = Ensure(d);
+        if (c == null) return;
+        c.Push();
+        c.FinishRelease();
+        c.StopPreviewInternal();
+        c.fromY = parkedY;
+        c.cells = captured;
+        var world = GameManager.Instance != null ? GameManager.Instance.World : null;
+        var root = HSLiftCar.BuildVisual(world, captured, true, parkedY);
+        c.move.Begin(root, parkedY, targetY);
+        c.move.CurY = curY;
+        c.move.Apply();
+        c.LiftState = targetY > parkedY ? HSLiftState.MovingUp : HSLiftState.MovingDown;
+        c.StartMoveSound(root);
+        HSLiftDebug.Info("Client car " + liftId + " moving Y" + parkedY + " -> Y" + targetY);
+    }
+
+    public static void FinishRemoteMove(string liftId, int y)
+    {
+        var d = HSLiftConfiguration.ById(liftId);
+        if (!Bind(d)) return;
+        var c = Of(d);
+        if (c == null) return;
+        c.Push();
+        d.CurrentY = y;
+        c.StopMoveSound();
+        c.PlayAt(d.ArriveSound, y);
+        c.releasing = c.move.Root;
+        c.releaseAt = Time.time + ReleaseDelay;
+        c.move.Root = null;
+        c.cells = null;
+        c.errorReason = null;
+        c.LiftState = HSLiftState.Idle;
+        HSLiftDebug.Info("Client car " + liftId + " arrived Y" + y);
+    }
+
+    public static void SendActiveMoves(ClientInfo ci)
+    {
+        if (ci == null) return;
+        foreach (var c in all)
+        {
+            if (c == null || c.Bound == null || !c.IsThisMoving || c.cells == null) continue;
+            HSLiftNet.SendMoveStartTo(ci, c.Bound.ElevatorId, c.fromY, c.move.TargetY, c.move.CurY, c.cells);
+        }
+    }
+
     public static void OnWorldShuttingDown()
     {
         foreach (var c in all.ToArray())
@@ -729,6 +841,13 @@ public class HSLiftController : MonoBehaviour
             c.StopMoveSound();
             c.StopPreviewInternal();
             c.FinishRelease();
+            if (!HSLiftNet.IsAuthority)
+            {
+                c.move.Destroy();
+                c.cells = null;
+                c.LiftState = HSLiftState.Idle;
+                continue;
+            }
             if (c.cells == null)
             {
                 c.LiftState = HSLiftState.Idle;

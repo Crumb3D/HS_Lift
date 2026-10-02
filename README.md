@@ -19,15 +19,16 @@ Vanilla elevator doors and panels are decoration. HS Lift turns a cabin or vehic
 - 7 Days to Die **3.2** (PC).
 - **Harmony** — `0_TFP_Harmony`, ships with the game. Do not remove it.
 - A game restart after installing or replacing `HSLift.dll`.
+- **Multiplayer:** the same `HS_Lift` folder on the **dedicated server and every client**. Lifts live on the server; everyone can see and use cars other players set up.
 
 ---
 
 ## Installation
 
-1. Unzip so you have `7 Days To Die/Mods/HS_Lift/` (or the same path under `%AppData%/7DaysToDie/Mods/`).
+1. Unzip so you have `7 Days To Die/Mods/HS_Lift/` (or the same path under `%AppData%/7DaysToDie/Mods/`). On a dedicated server, put the same folder in the server `Mods` directory.
 2. `ModInfo.xml` and `HSLift.dll` must sit **directly** in that `HS_Lift` folder — not `Mods/HS_Lift/HS_Lift/`.
-3. **Do not** copy someone else’s `HSLift.json`. The mod writes a blank one on first load.
-4. Restart the game.
+3. **Do not** copy someone else’s `HSLift.json`. The **server** writes the live one. Clients receive the lift list from the server.
+4. Restart the game (and the dedicated server if you use one).
 
 ---
 

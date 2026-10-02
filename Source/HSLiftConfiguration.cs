@@ -138,8 +138,51 @@ public static class HSLiftConfiguration
         ActiveId = d.ElevatorId;
     }
 
+    public static string ToSyncJson()
+    {
+        var file = new HSLiftFile { ActiveId = ActiveId, Debug = HSLiftDebug.Enabled, FloorScheme = FileFloorScheme, Lifts = Lifts };
+        return JsonConvert.SerializeObject(file);
+    }
+
+    public static void ApplyFromServer(string json)
+    {
+        if (string.IsNullOrEmpty(json)) return;
+        try
+        {
+            var settings = new JsonSerializerSettings { ObjectCreationHandling = ObjectCreationHandling.Replace };
+            var file = JsonConvert.DeserializeObject<HSLiftFile>(json, settings) ?? new HSLiftFile();
+            Lifts = file.Lifts != null ? file.Lifts : new List<HSLiftConfigData>();
+            ActiveId = file.ActiveId;
+            FileFloorScheme = NormalizeFloorScheme(string.IsNullOrEmpty(file.FloorScheme) ? "gb" : file.FloorScheme);
+            if (Lifts.Count == 0) Lifts.Add(new HSLiftConfigData());
+            foreach (var d in Lifts) Normalize(d);
+            var active = ById(ActiveId) ?? Lifts[0];
+            Use(active);
+            HSLiftDebug.Enabled = file.Debug;
+            foreach (var d in Lifts)
+            {
+                if (d.Debug) HSLiftDebug.Enabled = true;
+                HSLiftController.Ensure(d);
+            }
+            HSLiftDebug.Info("Got " + Lifts.Count + " lift(s) from server. Editing " + Data.ElevatorId);
+        }
+        catch (Exception e)
+        {
+            HSLiftDebug.Error("Could not apply lift list from server", e);
+        }
+    }
+
     public static void Load()
     {
+        if (HSLiftNet.IsRemoteClient)
+        {
+            Lifts = new List<HSLiftConfigData>();
+            Lifts.Add(new HSLiftConfigData());
+            FileFloorScheme = "gb";
+            Use(Lifts[0]);
+            HSLiftDebug.Info("Client: waiting for the server lift list");
+            return;
+        }
         Lifts = new List<HSLiftConfigData>();
         FileFloorScheme = "gb";
         try
@@ -239,8 +282,10 @@ public static class HSLiftConfiguration
                 else if (!Lifts.Contains(Data)) Lifts.Add(Data);
                 ActiveId = Data.ElevatorId;
             }
+            if (HSLiftNet.IsRemoteClient) return;
             var file = new HSLiftFile { ActiveId = ActiveId, Debug = HSLiftDebug.Enabled, FloorScheme = FileFloorScheme, Lifts = Lifts };
             File.WriteAllText(FilePath, JsonConvert.SerializeObject(file, Formatting.Indented));
+            HSLiftNet.BroadcastConfig();
         }
         catch (Exception e)
         {

@@ -1,6 +1,8 @@
 # HS Lift — YouTuber quick start (admin)
 
-Drop the **HS_Lift** folder into `Mods`. Do **not** copy someone else’s `HSLift.json` — the mod creates a blank one on first load.
+Drop the **HS_Lift** folder into `Mods`. Do **not** copy someone else’s `HSLift.json` — the server creates a blank one on first load.
+
+On a **dedicated server**, the same folder must be in the **server Mods** and in **every player’s Mods**. The host’s lift list is what everyone sees and uses.
 
 Needs **Harmony** (`0_TFP_Harmony`, ships with 7DTD). Restart the game after installing.
 

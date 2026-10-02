@@ -9,9 +9,11 @@ public class HSLiftMod : IModApi
     public void InitMod(Mod _modInstance)
     {
         ModPath = _modInstance.Path;
-        HSLiftDebug.Info("Init v1.0.0 - setup tool hold E; admin console: hslift");
+        HSLiftDebug.Info("Init v1.0.0 - server sync; setup tool hold E; admin: hslift");
+        HSLiftNet.RegisterPackage();
         ModEvents.GameStartDone.RegisterHandler(OnGameStartDone);
         ModEvents.WorldShuttingDown.RegisterHandler(OnWorldShuttingDown);
+        ModEvents.PlayerSpawnedInWorld.RegisterHandler(HSLiftNet.OnPlayerSpawned);
         try
         {
             new Harmony("HSLift").PatchAll(Assembly.GetExecutingAssembly());

@@ -107,6 +107,12 @@ public static class HSLiftDoorPatch
         if (__state == NoPair) return;
         try
         {
+            if (HSLiftNet.IsRemoteClient)
+            {
+                var id = HSLiftConfiguration.Data != null ? HSLiftConfiguration.Data.ElevatorId : "";
+                HSLiftNet.SendDoors(id, __state == PairOpen);
+                return;
+            }
             var world = GameManager.Instance.World;
             if (__state == PairOpen)
             {

@@ -53,7 +53,16 @@ public class ConsoleCmdHSLift : ConsoleCmdAbstract
             var arg = _params != null && _params.Count > 1 ? _params[1].ToLowerInvariant() : "";
             var extra = _params != null && _params.Count > 2 ? _params[2] : "";
             var world = GameManager.Instance.World;
-            var player = world != null ? world.GetPrimaryPlayer() : null;
+            EntityPlayerLocal player = null;
+            if (world != null)
+            {
+                player = world.GetPrimaryPlayer();
+                if (player == null)
+                {
+                    var locals = world.GetLocalPlayers();
+                    if (locals != null && locals.Count > 0) player = locals[0] as EntityPlayerLocal;
+                }
+            }
             Out(HSLiftSetup.Execute(sub, arg, extra, player));
         }
         catch (Exception e)
