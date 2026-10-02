@@ -285,6 +285,8 @@ public static class HSLiftCar
             for (int y = lo; y <= hi; y++)
             {
                 if (y == yFrom) continue;
+                // Floor/wall cells sweep through the parked cabin (other dy at this XZ). That is the car, not a shaft block.
+                if (InBox(new Vector3i(x, y, z), fromY)) continue;
                 var err = CheckClear(world, new Vector3i(x, y, z), "is blocking the lift shaft", true);
                 if (err != null) return err;
             }

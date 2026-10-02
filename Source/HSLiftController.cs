@@ -651,6 +651,7 @@ public class HSLiftController : MonoBehaviour
                 int y = (dir > 0 ? Mathf.CeilToInt(move.CurY) : Mathf.FloorToInt(move.CurY)) + c.Dy + dir;
                 if (y < pathLo + c.Dy || y > pathHi + c.Dy) continue;
                 if (y == fromY + c.Dy) continue;
+                if (HSLiftCar.InBox(new Vector3i(x, y, z), fromY)) continue;
                 var err = HSLiftCar.CheckClear(world, new Vector3i(x, y, z), "is blocking the lift shaft", true);
                 if (err != null) return err;
             }
