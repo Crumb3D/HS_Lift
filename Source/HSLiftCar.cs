@@ -73,6 +73,24 @@ public static class HSLiftCar
         return false;
     }
 
+    static bool IsCarPerimeter(int x, int z)
+    {
+        if (!D.HasCar) return false;
+        return x == D.MinX || x == D.MinX + D.SizeX - 1
+            || z == D.MinZ || z == D.MinZ + D.SizeZ - 1;
+    }
+
+    // Double-door volume reaches one cell into the cabin. That inner floor must ride.
+    public static int DropInteriorFloorExcludes()
+    {
+        if (D == null || !D.HasCar || D.ExcludedColumns == null) return 0;
+        return D.ExcludedColumns.RemoveAll(e =>
+            e != null && e.Length >= 4
+            && e[2] == 0 && e[3] == 0
+            && InRect(e[0], e[1])
+            && !IsCarPerimeter(e[0], e[1]));
+    }
+
     // Doorway floor between the car and the exit stays put. Any block shape. Rows above (plate corner, etc.) still ride.
     public static bool EnsureExcludedCell(int x, int z, int dyMin, int dyMax)
     {
@@ -107,6 +125,7 @@ public static class HSLiftCar
                 foreach (var cell in HSLiftDoors.DoorCells(parent, world.GetBlock(parent)))
                 {
                     if (!InFootprint(cell.x, cell.z)) continue;
+                    if (!IsCarPerimeter(cell.x, cell.z)) continue;
                     if (EnsureExcludedCell(cell.x, cell.z, 0, 0)) added++;
                 }
             }
@@ -215,7 +234,7 @@ public static class HSLiftCar
         cells = new List<HSLiftCell>();
         if (world == null) return "no world";
         if (!D.HasCar) return "car not set (hslift corner1 / corner2)";
-        if (AutoExcludeDoorPlatforms(world) > 0) HSLiftConfiguration.Save();
+        if (DropInteriorFloorExcludes() + AutoExcludeDoorPlatforms(world) > 0) HSLiftConfiguration.Save();
         for (int dy = 0; dy < (D.IsVehicleType ? Math.Max(2, D.SizeY) : D.SizeY); dy++)
         for (int dx = 0; dx < D.SizeX; dx++)
         for (int dz = 0; dz < D.SizeZ; dz++)

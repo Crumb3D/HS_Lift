@@ -268,6 +268,7 @@ public static class HSLiftConfiguration
         var saved = Data;
         Data = d;
         SyncFloors();
+        HSLiftCar.DropInteriorFloorExcludes();
         Data = saved;
     }
 
