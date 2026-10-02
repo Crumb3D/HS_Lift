@@ -1,0 +1,9 @@
+<configs>
+	<!-- Same gate as a vanilla switch: Wiring 101 until Electrician 25. -->
+	<append xpath="/progression/crafting_skills/crafting_skill[@name='craftingElectrician']/display_entry[@unlock_level='25']">
+		<unlock_entry item="hsliftTool,hsliftOutsidePanel,hsliftOutsidePanelHalfBlock,hsliftOutsidePanelTenthBlock,hsliftInsidePanel,hsliftInsidePanelHalfBlock,hsliftInsidePanelPlateOffset" unlock_tier="1"/>
+	</append>
+	<append xpath="/progression/crafting_skills/crafting_skill[@name='craftingElectrician']/effect_group">
+		<passive_effect name="RecipeTagUnlocked" operation="base_set" level="25,100" value="1" tags="hsliftTool,hsliftOutsidePanel,hsliftOutsidePanelHalfBlock,hsliftOutsidePanelTenthBlock,hsliftInsidePanel,hsliftInsidePanelHalfBlock,hsliftInsidePanelPlateOffset"/>
+	</append>
+</configs>

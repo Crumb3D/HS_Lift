@@ -15,7 +15,7 @@ You build the car and shaft. HS Lift only **moves** what belongs to that lift. I
 | Item | Where | What it is |
 |---|---|---|
 | Elevator Handbook | 1 paper, hand craft | This guide. Use it to read. Not consumed. |
-| Elevator Setup Tool | Workbench (electrician / Advanced Engineering) | Hold it, aim at a **placed** block (wood through steel, **not dirt**), **hold E**. |
+| Elevator Setup Tool | Workbench after **Wiring 101** (Electrician 25) | Hold it, aim at a **placed** block (wood through steel, **not dirt**), **hold E**. |
 | Outside Button Panel | Workbench | One per floor, beside the shaft. Wire **any one** registered panel of that lift to a generator or battery bank. |
 | Inside Button Panel | Workbench | Optional. Goes **in the car** (passenger) or **on the pad** (vehicle). No wires. **Do not register it.** |
 

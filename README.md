@@ -118,7 +118,7 @@ More build detail: [MAKE_THE_LIFT.md](MAKE_THE_LIFT.md), [QUICKSTART.md](QUICKST
 
 ## Craft / spawn
 
-Workbench (electrician / Advanced Engineering) for the setup tool and panels. Handbook is 1 paper in the inventory.
+Read **Wiring 101** until **Electrician 25** (same rank as a light switch). Then craft the setup tool and panels at a workbench. Handbook is 1 paper in the inventory.
 
 Admin:
 
