@@ -13,6 +13,7 @@ Source/bin/
 
 # Local tooling
 API_NOTES.md
+SUBMIT_7D2DMODS.md
 .codegpt-game.json
 .vs/
 *.user
