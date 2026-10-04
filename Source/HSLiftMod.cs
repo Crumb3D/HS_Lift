@@ -1,14 +1,26 @@
 using System;
+using System.IO;
 using System.Reflection;
 using HarmonyLib;
 
 public class HSLiftMod : IModApi
 {
     public static string ModPath;
+    public static string UserDataPath;
 
     public void InitMod(Mod _modInstance)
     {
         ModPath = _modInstance.Path;
+        try
+        {
+            UserDataPath = Path.Combine(GameIO.GetUserGameDataDir(), "HSLift");
+            Directory.CreateDirectory(UserDataPath);
+            HSLiftConfiguration.EvacuateRuntimeFilesFromModFolder();
+        }
+        catch (Exception e)
+        {
+            HSLiftDebug.Error("Could not move lift save out of the mod folder", e);
+        }
         HSLiftDebug.Info("Init v1.0.0 - server sync; setup tool hold E; admin: hslift");
         HSLiftNet.RegisterPackage();
         ModEvents.GameStartDone.RegisterHandler(OnGameStartDone);

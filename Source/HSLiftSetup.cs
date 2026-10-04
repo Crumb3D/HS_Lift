@@ -55,7 +55,7 @@ public static class HSLiftSetup
             {
                 if (arg != "gb" && arg != "uk" && arg != "us" && arg != "usa")
                     return "Floor labels: gb (default, G stays G) or us (G becomes 1, 1 becomes 2). Current: " + HSLiftConfiguration.FileFloorScheme
-                        + "\nEdit FloorScheme in HSLift.json and restart, or: hslift scheme gb | us";
+                        + "\nEdit FloorScheme in the world-save HSLift.json and restart, or: hslift scheme gb | us";
                 HSLiftConfiguration.SetFloorScheme(arg);
                 HSLiftFloorSigns.Invalidate();
                 var world = GameManager.Instance.World;

@@ -29,7 +29,7 @@ public class ConsoleCmdHSLift : ConsoleCmdAbstract
             "hslift floor ground           - aim at a landing: that height becomes G. Floors above become 1, 2, …\n" +
             "hslift floor remove <name>    - forget a floor\n" +
             "hslift floor list             - show floors\n" +
-            "hslift scheme gb | us         - floor labels (also FloorScheme in HSLift.json: gb or us). GB default: G, 1, 2. US: G becomes 1\n" +
+            "hslift scheme gb | us         - floor labels (also FloorScheme in the world-save HSLift.json: gb or us). GB default: G, 1, 2. US: G becomes 1\n" +
             "hslift panel                  - register the aimed outside button panel (floor found from its height)\n" +
             "hslift panel clear            - forget all registered panels\n" +
             "hslift go <floor>             - send the car to a floor\n" +

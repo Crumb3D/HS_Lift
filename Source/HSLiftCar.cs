@@ -838,7 +838,12 @@ public static class HSLiftCar
 
     // --- crash-safety journal ---
 
-    static string LegacyJournalPath { get { return Path.Combine(HSLiftMod.ModPath ?? ".", "HSLift.journal.json"); } }
+    static string JournalDir
+    {
+        get { return HSLiftConfiguration.RuntimeDir; }
+    }
+
+    static string LegacyJournalPath { get { return Path.Combine(JournalDir, "HSLift.journal.json"); } }
 
     static string JournalPath { get { return JournalPathFor(D.ElevatorId); } }
 
@@ -847,7 +852,7 @@ public static class HSLiftCar
         var safe = string.IsNullOrEmpty(id) ? "lift1" : id;
         foreach (var c in Path.GetInvalidFileNameChars())
             safe = safe.Replace(c, '_');
-        return Path.Combine(HSLiftMod.ModPath ?? ".", "HSLift." + safe + ".journal.json");
+        return Path.Combine(JournalDir, "HSLift." + safe + ".journal.json");
     }
 
     static int TexChannels
@@ -867,6 +872,8 @@ public static class HSLiftCar
             for (int i = 0; i < n; i++) tex[i] = c.Tex[i];
             j.Cells.Add(new HSLiftJournalCell { Dx = c.Dx, Dy = c.Dy, Dz = c.Dz, Raw = c.Bv.rawData, Damage = c.Bv.damage, Density = c.Density, Tex = tex });
         }
+        var dir = JournalDir;
+        if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
         File.WriteAllText(JournalPath, JsonConvert.SerializeObject(j));
     }
 

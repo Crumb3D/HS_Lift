@@ -27,7 +27,7 @@ Vanilla elevator doors and panels are decoration. HS Lift turns a cabin or vehic
 
 1. Unzip so you have `7 Days To Die/Mods/HS_Lift/` (or the same path under `%AppData%/7DaysToDie/Mods/`). On a dedicated server, put the same folder in the server `Mods` directory.
 2. `ModInfo.xml` and `HSLift.dll` must sit **directly** in that `HS_Lift` folder — not `Mods/HS_Lift/HS_Lift/`.
-3. **Do not** copy someone else’s `HSLift.json`. The **server** writes the live one. Clients receive the lift list from the server.
+3. Keep the **same files** on the server and every client. Do **not** leave `HSLift.json` or `HSLift*.journal.json` in `Mods/HS_Lift` — the game hashes that folder and then says you have the wrong mod. Lift data lives in the **world save**. This build moves those files out of Mods on launch.
 4. Restart the game (and the dedicated server if you use one).
 
 ---
@@ -111,7 +111,7 @@ Do **not** build cabin **walls** out of sheets.
 
 Anything you place **inside the car box** rides with it, including chests and lanterns. Terrain / dirt cannot. Keep the lift’s power wire on an **outside** panel.
 
-Floor scheme (menus and signs): default **GB** is G, 1, 2. **US** shows G as 1, 1 as 2. Set `"FloorScheme": "us"` in `HSLift.json` and restart, or `hslift scheme us`.
+Floor scheme (menus and signs): default **GB** is G, 1, 2. **US** shows G as 1, 1 as 2. Set `"FloorScheme": "us"` in the world-save `HSLift.json` and restart, or `hslift scheme us`.
 
 More build detail: [MAKE_THE_LIFT.md](MAKE_THE_LIFT.md), [QUICKSTART.md](QUICKSTART.md), [PLAYER_HANDBOOK.md](PLAYER_HANDBOOK.md). In-game: craft the Elevator Handbook (1 paper) or Journal → Challenges → HS Lift. Printable: `Handbook.html` / `HS-Lift-Handbook.pdf`.
 

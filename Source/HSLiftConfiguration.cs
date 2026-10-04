@@ -129,7 +129,61 @@ public static class HSLiftConfiguration
     public static string ActiveId;
     public static string FileFloorScheme = "gb";
 
-    static string FilePath { get { return Path.Combine(HSLiftMod.ModPath ?? ".", "HSLift.json"); } }
+    // Never write into Mods/. The game hashes that folder; a server-created HSLift.json
+    // makes joining clients look like they have the wrong mod.
+    public static string RuntimeDir
+    {
+        get
+        {
+            try
+            {
+                var save = GameIO.GetSaveGameDir();
+                if (!string.IsNullOrEmpty(save)) return save;
+            }
+            catch { }
+            return string.IsNullOrEmpty(HSLiftMod.UserDataPath) ? "." : HSLiftMod.UserDataPath;
+        }
+    }
+
+    static string FilePath { get { return Path.Combine(RuntimeDir, "HSLift.json"); } }
+
+    public static void EvacuateRuntimeFilesFromModFolder()
+    {
+        var mod = HSLiftMod.ModPath;
+        var dest = HSLiftMod.UserDataPath;
+        if (string.IsNullOrEmpty(mod) || string.IsNullOrEmpty(dest) || !Directory.Exists(mod)) return;
+        Directory.CreateDirectory(dest);
+        MoveRuntimeFile(Path.Combine(mod, "HSLift.json"), Path.Combine(dest, "HSLift.json"));
+        foreach (var f in Directory.GetFiles(mod, "HSLift*.journal.json"))
+            MoveRuntimeFile(f, Path.Combine(dest, Path.GetFileName(f)));
+    }
+
+    static void MoveRuntimeFile(string from, string to)
+    {
+        if (!File.Exists(from)) return;
+        try
+        {
+            if (!File.Exists(to)) File.Copy(from, to);
+            File.Delete(from);
+            HSLiftDebug.Info("Moved " + Path.GetFileName(from) + " out of Mods so server and clients keep the same folder.");
+        }
+        catch (Exception e)
+        {
+            HSLiftDebug.Error("Could not move " + from + " out of the mod folder", e);
+        }
+    }
+
+    static void AdoptPendingSaveIfNeeded()
+    {
+        var pending = string.IsNullOrEmpty(HSLiftMod.UserDataPath) ? null : Path.Combine(HSLiftMod.UserDataPath, "HSLift.json");
+        if (string.IsNullOrEmpty(pending) || !File.Exists(pending)) return;
+        if (File.Exists(FilePath)) return;
+        var dir = RuntimeDir;
+        if (string.Equals(Path.GetFullPath(dir), Path.GetFullPath(HSLiftMod.UserDataPath), StringComparison.OrdinalIgnoreCase)) return;
+        if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+        File.Copy(pending, FilePath);
+        HSLiftDebug.Info("Copied lift list into this world save.");
+    }
 
     public static void Use(HSLiftConfigData d)
     {
@@ -187,6 +241,7 @@ public static class HSLiftConfiguration
         FileFloorScheme = "gb";
         try
         {
+            AdoptPendingSaveIfNeeded();
             if (File.Exists(FilePath))
             {
                 var raw = File.ReadAllText(FilePath);
@@ -284,6 +339,8 @@ public static class HSLiftConfiguration
                 ActiveId = Data.ElevatorId;
             }
             if (HSLiftNet.IsRemoteClient) return;
+            var dir = RuntimeDir;
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
             var file = new HSLiftFile { ActiveId = ActiveId, Debug = HSLiftDebug.Enabled, FloorScheme = FileFloorScheme, Lifts = Lifts };
             File.WriteAllText(FilePath, JsonConvert.SerializeObject(file, Formatting.Indented));
             HSLiftNet.BroadcastConfig();
