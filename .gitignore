@@ -12,6 +12,7 @@ Source/bin/
 *.dll.new
 
 # Local tooling
+API_NOTES.md
 .codegpt-game.json
 .vs/
 *.user
