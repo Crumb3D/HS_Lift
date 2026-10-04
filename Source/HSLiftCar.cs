@@ -51,6 +51,15 @@ public static class HSLiftCar
         return InRect(x, z) && !IsExcluded(x, z);
     }
 
+    // G / 1 / 2 row — the landing slab stays; it is not junk in the shaft.
+    public static bool IsRegisteredFloorY(int y)
+    {
+        if (D == null || D.Floors == null) return false;
+        foreach (var f in D.Floors)
+            if (f != null && f.Y == y) return true;
+        return false;
+    }
+
     // Column holds stationary landing blocks (P) at some rows. The car passes through such a column while travelling,
     // like a car passing each landing; only its stop position must be empty.
     public static bool IsExcluded(int x, int z)
@@ -306,6 +315,7 @@ public static class HSLiftCar
                 if (y == yFrom) continue;
                 // Floor/wall cells sweep through the parked cabin (other dy at this XZ). That is the car, not a shaft block.
                 if (InBox(new Vector3i(x, y, z), fromY)) continue;
+                if (IsRegisteredFloorY(y) && y != fromY) continue;
                 var err = CheckClear(world, new Vector3i(x, y, z), "is blocking the lift shaft", true);
                 if (err != null) return err;
             }
@@ -618,6 +628,7 @@ public static class HSLiftCar
         {
             if (IsRidePiece(c.Bv)) continue;
             var p = Pos(c, baseY);
+            if (IsRegisteredFloorY(p.y)) continue;
             var err = CheckClear(world, p, "is in the way where the car stops", true);
             if (err != null) return err;
             var block = c.Bv.Block;
@@ -633,9 +644,11 @@ public static class HSLiftCar
         var place = new List<HSLiftCell>();
         foreach (var c in cells)
         {
-            var dest = world.GetBlock(Pos(c, baseY));
+            var destPos = Pos(c, baseY);
+            var dest = world.GetBlock(destPos);
             if (!dest.isair && IsRidePiece(c.Bv)) continue;
             if (!dest.isair && IsPassThrough(dest) && !IsRidePiece(c.Bv)) continue;
+            if (!dest.isair && IsRegisteredFloorY(destPos.y)) continue;
             place.Add(c);
         }
         ApplyLayered(world, baseY, place, false);
