@@ -256,10 +256,8 @@ public static class HSLiftCar
             if (bv.isair) continue;
             var block = bv.Block;
             var name = block.GetBlockName();
-            // Vehicle: garage / roll-up doors stay at the landing. Only the floor slab and the inside panel ride.
+            // Vehicle: garage / roll-up doors stay at the landing. Everything else in the box rides.
             if (D.IsVehicleType && HSLiftDoors.IsGarageOrRollUpName(name)) continue;
-            // Sheets / extra door-trim stay at the landing. Plate corner + door trim 1m / corner ride with the car.
-            if (IsPassThrough(bv) && !IsRidePiece(bv)) continue;
             if (dy >= D.SizeY && !IsInsidePanel(block)) continue;
             if (block.shape.IsTerrain()) return "terrain (" + name + ") " + (D.IsVehicleType ? "on the platform" : "inside the car box") + " at " + pos;
             if (bv.ischild)
@@ -553,8 +551,8 @@ public static class HSLiftCar
             if (HSLiftDoors.IsCandidateDoor(bv.Block)) continue;
             bool inside = InBox(pos, baseY);
             bool ring = !InFootprint(x, z) && D.DistOutsideXZ(x, z) == 1;
-            if (inside && (!IsPassThrough(bv) || IsRidePiece(bv))) continue;
-            if (!inside && !ring) continue;
+            if (inside) continue;
+            if (!ring) continue;
             int lx = World.toBlockXZ(pos.x), ly = World.toBlockY(pos.y), lz = World.toBlockXZ(pos.z);
             list.Add(new OutsideCell
             {

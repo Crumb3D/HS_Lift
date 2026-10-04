@@ -98,8 +98,8 @@ Admin: `hslift status` lists what is still missing.
 | Walls and ceiling — **plates** or **hatches** | Ride |
 | **Plate Corner**, **Door Trim 1m**, **Door Trim Corner** | Ride; sweep through landing blocks while moving |
 | Doorway slab between car and exit | Stays (excluded). Any block. |
-| **Sheets**, **Plate Double**, other door trim, **round ladders** | Stay at the landing |
-| Vanilla wall **letters / numbers** | Stay; they update to the car’s floor |
+| **Sheets**, **Plate Double**, other door trim, **round ladders** | Ride if they are **inside** the car box. Same shapes on the landing stay and the car passes them |
+| Vanilla wall **letters / numbers** | Ride if they are **inside** the car. Landing signs stay and update to the car’s floor |
 | Cabin elevator door | Rides |
 | Landing elevator / garage door | Stays |
 | Inside panel | Rides |

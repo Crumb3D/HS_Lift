@@ -44,7 +44,7 @@ Need **at least two** solid shaft walls against the car (the building around it)
 | **Sheets** around the outside button | Stay put (pass-through). |
 | **Plate Double** | Stay put. Do not use as cabin walls or the vehicle pad. |
 | Other **door trim** (not 1m / not corner) | Stay put (door frames). |
-| **Sign letter / number** (G, 1, 2) | Stay put; they change to the car’s floor. |
+| **Sign letter / number** | **Inside the car:** rides. On the landing: stays and updates to the car’s floor. |
 | **Round ladder** | Stay put. |
 
 ---
