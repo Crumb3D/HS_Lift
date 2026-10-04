@@ -70,7 +70,7 @@ At **this** floor, also place (not in the moving box, or only the landing half):
 3. Outside button + optional sheets  
 4. Optional wall letter/number within 3 blocks of the outside door  
 
-Park the car at the next height → **Add Floor** on that floor slab → repeat landing door + outside button.
+If the cabin is already on 1 when you set corners, aim at the G landing → **Set Ground**. Then park at the next height → **Add Floor** on that floor slab → repeat landing door + outside button.
 
 ---
 

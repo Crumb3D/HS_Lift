@@ -662,7 +662,7 @@ public class HSLiftController : MonoBehaviour
         for (int z = D.MinZ; z < D.MinZ + D.SizeZ; z++)
         {
             if (HSLiftCar.IsExcluded(x, z)) continue;
-            int h = Math.Max(1, D.SizeY);
+            int h = HSLiftCar.ParkedHeight;
             int lo = Mathf.FloorToInt(move.CurY) + (dir < 0 ? -1 : 0);
             int hi = Mathf.CeilToInt(move.CurY) + h - 1 + (dir > 0 ? 1 : 0);
             int pathLo = Math.Min(fromY, move.TargetY), pathHi = Math.Max(fromY, move.TargetY) + h - 1;

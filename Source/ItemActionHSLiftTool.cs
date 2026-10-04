@@ -2,7 +2,7 @@ using System;
 using UnityEngine.Scripting;
 
 // Hold-E radial while this tool is in hand. Aim at the block the command needs, then pick from the wheel.
-// The game only opens an item radial from Action1 (secondary). Keep 8 entries — the wheel has 8 slots.
+// The game only opens an item radial from Action1 (secondary). Vanilla wheel has 13 slices.
 [Preserve]
 public class ItemActionHSLiftTool : ItemAction
 {
@@ -79,7 +79,9 @@ public class ItemActionHSLiftTool : ItemAction
             bool needCorner1 = d.Corner1 == null;
             bool needCorner2 = d.Corner2 == null;
             bool needFloor = d.Floors == null || d.Floors.Count < 2;
+            bool needGround = d.HasCar && needFloor;
             bool needPanel = d.Panels.Count < 2;
+            bool needExclude = d.HasCar && (d.ExcludedColumns == null || d.ExcludedColumns.Count == 0);
             Add(radial, 0, "ui_game_symbol_players", Localization.Get("hsliftRadialPed"), false);
             Add(radial, 1, "ui_game_symbol_assemble", Localization.Get("hsliftRadialVehicle"), false);
             Add(radial, 2, "ui_game_symbol_map", Localization.Get("hsliftRadialUse"), false);
@@ -87,8 +89,8 @@ public class ItemActionHSLiftTool : ItemAction
             Add(radial, 4, "ui_game_symbol_map_cursor", Localization.Get("hsliftRadialCorner2"), needCorner2);
             Add(radial, 5, "ui_game_symbol_map_house", Localization.Get("hsliftRadialFloor"), needFloor);
             Add(radial, 6, "ui_game_symbol_lightbulb", Localization.Get("hsliftRadialPanel"), needPanel);
-            bool needExclude = d.HasCar && (d.ExcludedColumns == null || d.ExcludedColumns.Count == 0);
-            Add(radial, 7, "ui_game_symbol_lock", Localization.Get("hsliftRadialExclude"), needExclude);
+            Add(radial, 7, "ui_game_symbol_book", Localization.Get("hsliftRadialGround"), needGround);
+            Add(radial, 8, "ui_game_symbol_lock", Localization.Get("hsliftRadialExclude"), needExclude);
             radial.SetCommonData(
                 default(GUI_2.UIUtils.ButtonIcon),
                 HandleCommand,
@@ -156,7 +158,8 @@ public class ItemActionHSLiftTool : ItemAction
                 case 4: msg = HSLiftSetup.Execute("corner2", "", "", player); break;
                 case 5: msg = HSLiftSetup.Execute("floor", "add", "", player); break;
                 case 6: msg = HSLiftSetup.Execute("panel", "", "", player); break;
-                case 7: msg = HSLiftSetup.Execute("exclude", "1", "", player); break;
+                case 7: msg = HSLiftSetup.Execute("floor", "ground", "", player); break;
+                case 8: msg = HSLiftSetup.Execute("exclude", "1", "", player); break;
                 default: return;
             }
             HSLiftSetup.Tell(player, msg);

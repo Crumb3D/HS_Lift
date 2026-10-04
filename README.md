@@ -70,6 +70,7 @@ Aim at a **placed** block (wood through steel, not dirt), then hold E.
 | Set Corner 1 / 2 | Opposite corners of the cabin (or pad) |
 | Add Floor | Register this landing height |
 | Register Panel | **Outside** buttons only |
+| Set Ground | Aimed slab becomes **G**. Floors above become 1, 2, … The car stays put. |
 | Exclude landing | Mark the doorway slab so it stays put |
 
 **Corners:** place a cheap block (or Door Trim) on the **outside** of two opposite corners, set Corner 1 and 2 on those, then delete the helpers. That includes the walls. Aiming at the inside of the cabin makes the box too small.

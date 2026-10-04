@@ -33,10 +33,11 @@ Aim at the block the command needs, then pick from the wheel. **Use Lift Here** 
 2. **Use Lift Here** — bind the aimed shaft (or the nearest one on this XZ) so Add Floor, Register Panel, and admin commands edit the right lift.
 3. **Set Corner 1** / **Set Corner 2** — opposite corners. **Passenger:** the whole 3D cabin. **Vehicle:** the **floor slab only**, both corners the **same height**.
 4. **Add Floor** — park the car at that landing first, then aim at a floor block there. Name it (G, 1, 2, B1, …).
-5. **Register Panel** — aim at an **outside** wall button only. Never the inside panel.
-6. **Finished editing** — lists what is still missing, or Ready.
+5. **Set Ground** — aim at the ground landing. That height becomes G; floors above become 1, 2, …. The car stays put. Use this when you set corners with the cabin already on 1.
+6. **Register Panel** — aim at an **outside** wall button only. Never the inside panel.
+7. **Exclude landing** — aim at the doorway slab so it stays put.
 
-Ground floor is created when both corners are set.
+Corners name the car’s current height G. **Set Ground** afterwards if that was not actually ground.
 
 ---
 

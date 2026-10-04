@@ -26,6 +26,7 @@ public class ConsoleCmdHSLift : ConsoleCmdAbstract
             "hslift list                   - list every lift (* = the one you are editing)\n" +
             "hslift select                 - aim at a lift: make that one the one you are editing\n" +
             "hslift floor add <name>       - aim at a landing floor block: adds a floor (G is set with the car)\n" +
+            "hslift floor ground           - aim at a landing: that height becomes G. Floors above become 1, 2, …\n" +
             "hslift floor remove <name>    - forget a floor\n" +
             "hslift floor list             - show floors\n" +
             "hslift scheme gb | us         - floor labels (also FloorScheme in HSLift.json: gb or us). GB default: G, 1, 2. US: G becomes 1\n" +

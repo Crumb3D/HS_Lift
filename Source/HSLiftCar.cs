@@ -35,9 +35,15 @@ public static class HSLiftCar
 {
     static HSLiftConfigData D { get { return HSLiftConfiguration.Data; } }
 
+    // Vehicle pad is SizeY 1; the inside panel sits on it and rides, so the parked box is 2 tall.
+    public static int ParkedHeight
+    {
+        get { return D != null && D.IsVehicleType ? Math.Max(2, D.SizeY) : Math.Max(1, D.SizeY); }
+    }
+
     public static bool InBox(Vector3i p, int baseY)
     {
-        return InRect(p.x, p.z) && p.y >= baseY && p.y < baseY + D.SizeY && !IsExcludedCell(p.x, p.y - baseY, p.z);
+        return InRect(p.x, p.z) && p.y >= baseY && p.y < baseY + ParkedHeight && !IsExcludedCell(p.x, p.y - baseY, p.z);
     }
 
     static bool InRect(int x, int z)
@@ -51,12 +57,16 @@ public static class HSLiftCar
         return InRect(x, z) && !IsExcluded(x, z);
     }
 
-    // G / 1 / 2 row — the landing slab stays; it is not junk in the shaft.
+    // Landing slab at each stop, plus the block under it (thick platform / G underside
+    // sitting on the roof of the floor below). Those stay; they are not shaft junk.
     public static bool IsRegisteredFloorY(int y)
     {
         if (D == null || D.Floors == null) return false;
         foreach (var f in D.Floors)
-            if (f != null && f.Y == y) return true;
+        {
+            if (f == null) continue;
+            if (f.Y == y || f.Y - 1 == y) return true;
+        }
         return false;
     }
 
@@ -354,6 +364,8 @@ public static class HSLiftCar
         var bv = world.GetBlock(pos);
         if (bv.isair) return null;
         var name = bv.Block.GetBlockName();
+        if (IsInsidePanel(bv.Block)) return null;
+        if (IsRegisteredFloorY(pos.y)) return null;
         if (D.IsVehicleType && HSLiftDoors.IsGarageOrRollUpName(name)) return null;
         if (allowPassThrough && (IsPassThrough(bv) || IsRidePiece(bv))) return null;
         HSLiftDebug.Verbose("Obstruction " + name + " at " + pos);

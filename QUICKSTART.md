@@ -33,7 +33,7 @@ Power: any vanilla generator or battery bank, plus wire. Wire **one** registered
 2. Hold the **Elevator Setup Tool**, aim at a **placed** block (not dirt), **hold E**.
 3. **New Ped Lift**.
 4. **Corners (do this, skip grow):** place a cheap building block on the **outside** of two **opposite corners** of the cabin (the cells just outside the walls). Aim at each helper → **Set Corner 1**, then **Set Corner 2**. Delete the helpers. The box now includes the walls. Aiming at the *inside* of the cabin makes the box too small and you would need `hslift grow 1`.
-5. Ground (**G**) is created when both corners are set.
+5. Corners name the car’s current height **G**. If the cabin is already on 1, aim at the real ground slab → **Set Ground**. That height becomes G; the car’s floor becomes 1. The cabin does not move.
 6. Park / stand at the next landing, aim at its **floor** block, hold E → **Add Floor** (1, 2, B1, …). Repeat per stop.
 7. Place an **outside button** beside the shaft on **each** floor. Aim at each → **Register Panel**. **Never** register the inside panel.
 8. Put an **inside panel** in the car. It rides. No wires. **Hold E** on it to pick a floor (a tap does nothing).

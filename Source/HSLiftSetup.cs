@@ -227,9 +227,32 @@ public static class HSLiftSetup
                 var same = HSLiftConfiguration.FloorAt(p.y);
                 if (same != null) return HSLiftConfiguration.FloorDisplayName(same.Name) + " is already at this height.";
                 d.Floors.Add(new HSLiftFloor { Name = name, Y = p.y });
+                RelabelIfStopBelowGround();
                 HSLiftConfiguration.SyncFloors();
                 HSLiftConfiguration.Save();
-                return HSLiftConfiguration.FloorDisplayName(name) + " added (car floor at this height).\nFloors: " + HSLiftConfiguration.FloorList();
+                var added = HSLiftConfiguration.FloorAt(p.y);
+                var shown = added != null ? HSLiftConfiguration.FloorDisplayName(added.Name) : name;
+                return shown + " added (car floor at this height).\nFloors: " + HSLiftConfiguration.FloorList();
+            }
+            case "ground":
+            case "g":
+            {
+                if (HSLiftController.IsMoving) return "Lift is moving.";
+                Vector3i p;
+                var err = AimedBlock(player, out p);
+                if (err != null) return err;
+                BindAimedLift(p);
+                d = HSLiftConfiguration.Data;
+                if (!d.HasCar) return "Set the car first (Corner 1, then Corner 2).";
+                var same = HSLiftConfiguration.FloorAt(p.y);
+                if (same != null && string.Equals(same.Name, "G", StringComparison.OrdinalIgnoreCase))
+                    return "Ground Floor is already at this height.\nFloors: " + HSLiftConfiguration.FloorList();
+                if (same == null)
+                    d.Floors.Add(new HSLiftFloor { Name = "G", Y = p.y });
+                RelabelWithGroundAt(p.y);
+                HSLiftConfiguration.SyncFloors();
+                HSLiftConfiguration.Save();
+                return "Ground Floor set at this height. Other floors were renamed to match.\nFloors: " + HSLiftConfiguration.FloorList();
             }
             case "remove":
             {
@@ -251,7 +274,80 @@ public static class HSLiftSetup
                 return HSLiftConfiguration.FloorDisplayName(f.Name) + " removed. Floors: " + HSLiftConfiguration.FloorList();
             }
         }
-        return "Usage: hslift floor list | add <name> | remove <name>";
+        return "Usage: hslift floor list | add <name> | ground | remove <name>";
+    }
+
+    static bool IsBasementName(string name)
+    {
+        return name != null && name.Length >= 2 && (name[0] == 'B' || name[0] == 'b') && char.IsDigit(name[1]);
+    }
+
+    // Aimed height becomes G. Stops above it become 1, 2, …; stops below become B1, B2, … (closest first).
+    // The car stays where it is — this only renames / adds the ground stop.
+    static void RelabelWithGroundAt(int groundY)
+    {
+        var d = HSLiftConfiguration.Data;
+        if (d.Floors == null) return;
+        d.Floors.RemoveAll(f => f == null);
+        d.Floors.Sort((a, b) => a.Y.CompareTo(b.Y));
+        int below = 0;
+        for (int i = d.Floors.Count - 1; i >= 0; i--)
+        {
+            if (d.Floors[i].Y >= groundY) continue;
+            below++;
+            d.Floors[i].Name = "B" + below;
+        }
+        int above = 0;
+        for (int i = 0; i < d.Floors.Count; i++)
+        {
+            var f = d.Floors[i];
+            if (f.Y < groundY) continue;
+            if (f.Y == groundY) f.Name = "G";
+            else
+            {
+                above++;
+                f.Name = above.ToString();
+            }
+        }
+    }
+
+    // Corners always name the car's height G. If you then Add Floor on a landing below,
+    // that lower stop becomes G and the car's floor becomes 1 (2, …). Real B1 stays B1.
+    static void RelabelIfStopBelowGround()
+    {
+        var d = HSLiftConfiguration.Data;
+        if (d.Floors == null || d.Floors.Count < 2) return;
+        d.Floors.Sort((a, b) => a.Y.CompareTo(b.Y));
+        HSLiftFloor g = null;
+        for (int i = 0; i < d.Floors.Count; i++)
+        {
+            if (string.Equals(d.Floors[i].Name, "G", StringComparison.OrdinalIgnoreCase))
+            {
+                g = d.Floors[i];
+                break;
+            }
+        }
+        if (g == null) return;
+        bool numberedBelowG = false;
+        int parsed;
+        for (int i = 0; i < d.Floors.Count; i++)
+        {
+            var f = d.Floors[i];
+            if (f.Y < g.Y && int.TryParse(f.Name, out parsed) && parsed >= 1)
+            {
+                numberedBelowG = true;
+                break;
+            }
+        }
+        if (!numberedBelowG) return;
+        int num = 1;
+        for (int i = 0; i < d.Floors.Count; i++)
+        {
+            var f = d.Floors[i];
+            if (IsBasementName(f.Name)) continue;
+            f.Name = num == 1 ? "G" : (num - 1).ToString();
+            num++;
+        }
     }
 
     static string NextFloorName(int y)
