@@ -2,7 +2,7 @@
 
 Build your own passenger or vehicle elevators in **7 Days to Die**. You build the cabin or garage pad from vanilla blocks. HS Lift **moves** that structure — it does not spawn a premade car, and it will not chew through blocks in the shaft.
 
-**Version 1.0.0** — tested on **7 Days to Die 3.2**. Not claimed for 1.0, 2.0, or 3.3 Experimental.
+**Version 1.0.1** — tested on **7 Days to Die 3.2**. Not claimed for 1.0, 2.0, or 3.3 Experimental.
 
 License: [MIT](LICENSE). Author: Crumb.
 
