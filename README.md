@@ -2,7 +2,7 @@
 
 Build your own passenger or vehicle elevators in **7 Days to Die**. You build the cabin or garage pad from vanilla blocks. HS Lift **moves** that structure — it does not spawn a premade car, and it will not chew through blocks in the shaft.
 
-**Version 1.0.2** — tested on **7 Days to Die 3.2**. Not claimed for 1.0, 2.0, or 3.3 Experimental.
+**Version 1.0.3** — tested on **7 Days to Die 3.2**. Not claimed for 1.0, 2.0, or 3.3 Experimental.
 
 License: [MIT](LICENSE). Author: Crumb.
 
@@ -160,6 +160,7 @@ F1 console (admin). `hslift` prints the full list. Common:
 - **Wrong lift edited** — **Use Lift Here** first.
 - **Need two shaft walls** — the cabin has to sit against the building.
 - After a new `HSLift.dll` or XML change, **restart** the game.
+- **Auto-paint / cabin music** — host settings (`hslift autopaint on|off`, `hslift music on|off`, or `HSLiftSettings.json` in the world save). Joining clients follow the host. Single player uses your local file because you are the host. Paintbrush materials stay available either way. MP3s still live in `assets/music` on each machine.
 
 ---
 
@@ -178,6 +179,8 @@ Open an issue on the GitHub repository with the game version, what you built, an
 ---
 
 ## Changelog
+
+**1.0.3** — Vehicle garage wells get the same shaft-lid as passenger lifts. Cabin interior paints (paintbrush + optional auto-paint), host-controlled cabin music (quiet, looping, all clients hear the same track).
 
 **1.0.2** — Dedicated clients no longer get kicked when the lift list arrives (config packet length). If the shaft well has no roof, the mod caps it with concrete half-cubes at the real top of the shaft walls; blocks sitting on that lid move with it.
 

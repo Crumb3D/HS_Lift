@@ -439,9 +439,10 @@ public class HSLiftController : MonoBehaviour
         move.Begin(root, fromY, targetY);
         HSLiftCar.RemoveFromWorld(world, fromY, cells);
         LiftState = targetY > fromY ? HSLiftState.MovingUp : HSLiftState.MovingDown;
+        cabinTrack = HSLiftSounds.ChooseTrack();
         StartMoveSound(root);
         nextPowerCheck = Time.time + PowerCheckInterval;
-        HSLiftNet.BroadcastMoveStart(D.ElevatorId, fromY, targetY, fromY, cells);
+        HSLiftNet.BroadcastMoveStart(D.ElevatorId, fromY, targetY, fromY, cells, cabinTrack);
         HSLiftDebug.Info(string.Format("{0}: Y{1} -> Y{2} ({3} blocks, {4})", State, fromY, targetY, cells.Count, source));
     }
 
@@ -609,7 +610,7 @@ public class HSLiftController : MonoBehaviour
             {
                 nextShaftRoof = Time.time + 2f;
                 var wRoof = GameManager.Instance != null ? GameManager.Instance.World : null;
-                if (wRoof != null && D != null && D.HasCar && !D.IsVehicleType)
+                if (wRoof != null && D != null && D.HasCar)
                 {
                     int before = D.AutoShaftRoofY;
                     if (HSLiftCar.EnsureShaftRoof(wRoof) > 0 || D.AutoShaftRoofY != before)
@@ -730,12 +731,15 @@ public class HSLiftController : MonoBehaviour
 
     string loopPlaying;
     AudioSource customLoop;
+    AudioSource cabinMusic;
+    string cabinTrack;
 
     void StartMoveSound(GameObject carRoot)
     {
         try
         {
             customLoop = HSLiftSounds.StartMoveLoop(carRoot);
+            StartCoroutine(HSLiftSounds.PlayCabinMusic(carRoot, cabinTrack, src => cabinMusic = src));
             if (customLoop != null) return;
             var name = D.MoveLoopSound;
             var player = GameManager.Instance.World.GetPrimaryPlayer();
@@ -755,6 +759,8 @@ public class HSLiftController : MonoBehaviour
         {
             if (customLoop != null) { customLoop.Stop(); Destroy(customLoop); }
             customLoop = null;
+            if (cabinMusic != null) { cabinMusic.Stop(); Destroy(cabinMusic); }
+            cabinMusic = null;
             if (loopPlaying == null) return;
             var player = GameManager.Instance.World.GetPrimaryPlayer();
             if (player != null) Audio.Manager.StopLoopInsidePlayerHead(loopPlaying, player.entityId);
@@ -798,7 +804,7 @@ public class HSLiftController : MonoBehaviour
 
     // --- shutdown ---
 
-    public static void BeginRemoteMove(string liftId, int parkedY, int targetY, float curY, List<HSLiftCell> captured)
+    public static void BeginRemoteMove(string liftId, int parkedY, int targetY, float curY, List<HSLiftCell> captured, string musicFile)
     {
         var d = HSLiftConfiguration.ById(liftId);
         if (!Bind(d) || captured == null || captured.Count == 0) return;
@@ -809,6 +815,7 @@ public class HSLiftController : MonoBehaviour
         c.StopPreviewInternal();
         c.fromY = parkedY;
         c.cells = captured;
+        c.cabinTrack = musicFile;
         var world = GameManager.Instance != null ? GameManager.Instance.World : null;
         var root = HSLiftCar.BuildVisual(world, captured, true, parkedY);
         c.move.Begin(root, parkedY, targetY);
@@ -844,7 +851,7 @@ public class HSLiftController : MonoBehaviour
         foreach (var c in all)
         {
             if (c == null || c.Bound == null || !c.IsThisMoving || c.cells == null) continue;
-            HSLiftNet.SendMoveStartTo(ci, c.Bound.ElevatorId, c.fromY, c.move.TargetY, c.move.CurY, c.cells);
+            HSLiftNet.SendMoveStartTo(ci, c.Bound.ElevatorId, c.fromY, c.move.TargetY, c.move.CurY, c.cells, c.cabinTrack);
         }
     }
 

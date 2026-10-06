@@ -7,5 +7,23 @@
 			<property name="PaintCost" value="1"/>
 			<property name="SortIndex" value="99"/>
 		</paint>
+		<paint id="241" name="txName_HSLiftFloor">
+			<property name="TextureId" value="12"/>
+			<property name="Group" value="txGroupMetal"/>
+			<property name="PaintCost" value="1"/>
+			<property name="SortIndex" value="100"/>
+		</paint>
+		<paint id="242" name="txName_HSLiftWall">
+			<property name="TextureId" value="12"/>
+			<property name="Group" value="txGroupMetal"/>
+			<property name="PaintCost" value="1"/>
+			<property name="SortIndex" value="101"/>
+		</paint>
+		<paint id="243" name="txName_HSLiftCeiling">
+			<property name="TextureId" value="12"/>
+			<property name="Group" value="txGroupMetal"/>
+			<property name="PaintCost" value="1"/>
+			<property name="SortIndex" value="102"/>
+		</paint>
 	</append>
 </configs>

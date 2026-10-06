@@ -1,5 +1,6 @@
 # Live world / lift save — the game writes this on first load
 HSLift.json
+HSLiftSettings.json
 HSLift.journal.json
 HSLift.*.journal.json
 

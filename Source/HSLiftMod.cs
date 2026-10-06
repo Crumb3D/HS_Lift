@@ -21,7 +21,7 @@ public class HSLiftMod : IModApi
         {
             HSLiftDebug.Error("Could not move lift save out of the mod folder", e);
         }
-        HSLiftDebug.Info("Init v1.0.2 - server sync; setup tool hold E; admin: hslift");
+        HSLiftDebug.Info("Init v1.0.3 - server sync; setup tool hold E; admin: hslift");
         HSLiftNet.RegisterPackage();
         ModEvents.GameStartDone.RegisterHandler(OnGameStartDone);
         ModEvents.WorldShuttingDown.RegisterHandler(OnWorldShuttingDown);
@@ -40,6 +40,7 @@ public class HSLiftMod : IModApi
     {
         try
         {
+            HSLiftSettings.Load();
             HSLiftConfiguration.Load();
             HSLiftController.EnsureCreated();
         }

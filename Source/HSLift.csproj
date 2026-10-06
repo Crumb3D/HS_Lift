@@ -81,6 +81,10 @@
       <HintPath>$(GameDir)\7DaysToDie_Data\Managed\UnityEngine.UnityWebRequestAudioModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>$(GameDir)\7DaysToDie_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HSLiftMod.cs" />
@@ -96,8 +100,11 @@
     <Compile Include="HSLiftDoors.cs" />
     <Compile Include="HSLiftFloorSigns.cs" />
     <Compile Include="HSLiftSounds.cs" />
+    <Compile Include="HSLiftSettings.cs" />
     <Compile Include="HSLiftFloorMenu.cs" />
     <Compile Include="HSLiftActivation.cs" />
+    <Compile Include="HSLiftPaint.cs" />
+    <Compile Include="HSLiftAtlas.cs" />
     <Compile Include="HSLiftNet.cs" />
     <Compile Include="Patches\HSLiftDoorPatch.cs" />
     <Compile Include="Patches\HSLiftToolPatch.cs" />

@@ -161,16 +161,16 @@ public static class HSLiftNet
         }
     }
 
-    public static void BroadcastMoveStart(string liftId, int fromY, int targetY, float curY, List<HSLiftCell> cells)
+    public static void BroadcastMoveStart(string liftId, int fromY, int targetY, float curY, List<HSLiftCell> cells, string musicFile)
     {
         if (!IsAuthority) return;
-        ToClients(Pkg().SetupCmd(MoveStart, "", "", "", liftId ?? "", 0, targetY, true, new Vector3i(0, fromY, 0), false, cells, curY));
+        ToClients(Pkg().SetupCmd(MoveStart, musicFile ?? "", "", "", liftId ?? "", 0, targetY, true, new Vector3i(0, fromY, 0), false, cells, curY));
     }
 
-    public static void SendMoveStartTo(ClientInfo ci, string liftId, int fromY, int targetY, float curY, List<HSLiftCell> cells)
+    public static void SendMoveStartTo(ClientInfo ci, string liftId, int fromY, int targetY, float curY, List<HSLiftCell> cells, string musicFile)
     {
         if (!IsAuthority || ci == null) return;
-        ToClient(ci, Pkg().SetupCmd(MoveStart, "", "", "", liftId ?? "", 0, targetY, true, new Vector3i(0, fromY, 0), false, cells, curY));
+        ToClient(ci, Pkg().SetupCmd(MoveStart, musicFile ?? "", "", "", liftId ?? "", 0, targetY, true, new Vector3i(0, fromY, 0), false, cells, curY));
     }
 
     public static void BroadcastMoveEnd(string liftId, int y)
@@ -407,7 +407,7 @@ public class NetPackageHSLift : NetPackage
                     break;
                 case HSLiftNet.MoveStart:
                     if (HSLiftNet.IsAuthority) return;
-                    HSLiftController.BeginRemoteMove(liftId, pos.y, targetY, curY, cells);
+                    HSLiftController.BeginRemoteMove(liftId, pos.y, targetY, curY, cells, text);
                     break;
                 case HSLiftNet.MoveEnd:
                     if (HSLiftNet.IsAuthority) return;

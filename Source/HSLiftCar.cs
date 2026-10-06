@@ -168,7 +168,7 @@ public static class HSLiftCar
     // Open SHAFT well: half-cube lid at the real top of the shaft walls. If you build the shaft higher, this moves up.
     public static int EnsureShaftRoof(World world)
     {
-        if (world == null || D == null || !D.HasCar || D.IsVehicleType) return 0;
+        if (world == null || D == null || !D.HasCar) return 0;
         int topStop = D.CurrentY;
         if (D.Floors != null)
             foreach (var f in D.Floors)
@@ -921,6 +921,17 @@ public static class HSLiftCar
         return new Vector3i(D.MinX + c.Dx, baseY + c.Dy, D.MinZ + c.Dz);
     }
 
+    static HSLiftInteriorKind InteriorKind(HSLiftCell c)
+    {
+        if (c == null || c.Bv.Block == null) return HSLiftInteriorKind.None;
+        if (c.Bv.Block is BlockHSLiftInsidePanel || c.Bv.Block is BlockHSLiftOutsidePanel) return HSLiftInteriorKind.None;
+        if (HSLiftDoors.IsElevatorDoor(c.Bv.Block)) return HSLiftInteriorKind.None;
+        if (c.Dy <= 0) return HSLiftInteriorKind.Floor;
+        if (D.SizeY >= 2 && c.Dy >= D.SizeY - 1) return HSLiftInteriorKind.Ceiling;
+        if (c.Dx == 0 || c.Dx == D.SizeX - 1 || c.Dz == 0 || c.Dz == D.SizeZ - 1) return HSLiftInteriorKind.Wall;
+        return HSLiftInteriorKind.None;
+    }
+
     // Moving copy of the car: block models (with paint) plus mesh colliders on the layer the player controller rides.
     public static GameObject BuildVisual(World world, List<HSLiftCell> cells, bool withColliders, int baseY)
     {
@@ -981,6 +992,9 @@ public static class HSLiftCar
                     // Own copies of the maps, taken while the real block still exists. After RemoveFromWorld
                     // the game unloads the shared textures and the moving copy would go magenta without this.
                     pin.Keep(model, c.Bv.Block is BlockHSLiftOutsidePanel || c.Bv.Block is BlockHSLiftInsidePanel);
+                    HSLiftSettings.Load();
+                    if (HSLiftSettings.AutoPaintInterior)
+                        HSLiftPaint.Apply(model, pin, InteriorKind(c));
                     foreach (var lit in model.GetComponentsInChildren<Light>(true)) lit.enabled = true;
                 }
             }
@@ -1274,6 +1288,11 @@ public static class HSLiftCar
 public class HSLiftPinnedLooks : MonoBehaviour
 {
     readonly List<UnityEngine.Object> owned = new List<UnityEngine.Object>();
+
+    public void Own(UnityEngine.Object obj)
+    {
+        if (obj != null) owned.Add(obj);
+    }
 
     public void Keep(Transform model, bool panel)
     {

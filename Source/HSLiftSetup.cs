@@ -50,6 +50,21 @@ public static class HSLiftSetup
                 if (err != null) return err;
                 return HSLiftConfiguration.SelectNearest(p);
             }
+            case "autopaint":
+            case "paint":
+            {
+                bool on;
+                if (!HSLiftSettings.TryParseOnOff(arg, out on))
+                    return "Usage: hslift autopaint on | off   (host / single player). Now: AutoPaintInterior=" + HSLiftSettings.AutoPaintInterior;
+                return HSLiftSettings.SetAutoPaint(on);
+            }
+            case "music":
+            {
+                bool on;
+                if (!HSLiftSettings.TryParseOnOff(arg, out on))
+                    return "Usage: hslift music on | off   (host / single player). Now: Music=" + HSLiftSettings.Music;
+                return HSLiftSettings.SetMusic(on);
+            }
             case "scheme":
             case "numbering":
             {

@@ -122,6 +122,8 @@ public class HSLiftFile
     public bool Debug;
     // gb (default): G, 1, 2. us: G shows as 1, 1 as 2. Edit this; restart the game. No rebuild.
     public string FloorScheme = "gb";
+    public bool? AutoPaintInterior;
+    public bool? Music;
     public List<HSLiftConfigData> Lifts = new List<HSLiftConfigData>();
 }
 
@@ -195,10 +197,22 @@ public static class HSLiftConfiguration
         ActiveId = d.ElevatorId;
     }
 
+    static HSLiftFile MakeFile()
+    {
+        return new HSLiftFile
+        {
+            ActiveId = ActiveId,
+            Debug = HSLiftDebug.Enabled,
+            FloorScheme = FileFloorScheme,
+            AutoPaintInterior = HSLiftSettings.AutoPaintInterior,
+            Music = HSLiftSettings.Music,
+            Lifts = Lifts
+        };
+    }
+
     public static string ToSyncJson()
     {
-        var file = new HSLiftFile { ActiveId = ActiveId, Debug = HSLiftDebug.Enabled, FloorScheme = FileFloorScheme, Lifts = Lifts };
-        return JsonConvert.SerializeObject(file);
+        return JsonConvert.SerializeObject(MakeFile());
     }
 
     public static void ApplyFromServer(string json)
@@ -208,6 +222,9 @@ public static class HSLiftConfiguration
         {
             var settings = new JsonSerializerSettings { ObjectCreationHandling = ObjectCreationHandling.Replace };
             var file = JsonConvert.DeserializeObject<HSLiftFile>(json, settings) ?? new HSLiftFile();
+            HSLiftSettings.ApplyFromServer(
+                file.AutoPaintInterior.HasValue ? file.AutoPaintInterior.Value : true,
+                file.Music.HasValue ? file.Music.Value : true);
             Lifts = file.Lifts != null ? file.Lifts : new List<HSLiftConfigData>();
             ActiveId = file.ActiveId;
             FileFloorScheme = NormalizeFloorScheme(string.IsNullOrEmpty(file.FloorScheme) ? "gb" : file.FloorScheme);
@@ -256,6 +273,7 @@ public static class HSLiftConfiguration
                     ActiveId = file.ActiveId;
                     FileFloorScheme = ResolveFloorScheme(file.FloorScheme, Lifts);
                     Data = new HSLiftConfigData { Debug = file.Debug };
+                    HSLiftSettings.TakeFromFile(file);
                 }
                 else
                 {
@@ -344,8 +362,7 @@ public static class HSLiftConfiguration
             if (HSLiftNet.IsRemoteClient) return;
             var dir = RuntimeDir;
             if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-            var file = new HSLiftFile { ActiveId = ActiveId, Debug = HSLiftDebug.Enabled, FloorScheme = FileFloorScheme, Lifts = Lifts };
-            File.WriteAllText(FilePath, JsonConvert.SerializeObject(file, Formatting.Indented));
+            File.WriteAllText(FilePath, JsonConvert.SerializeObject(MakeFile(), Formatting.Indented));
             HSLiftNet.BroadcastConfig();
         }
         catch (Exception e)

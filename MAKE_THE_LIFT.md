@@ -31,7 +31,7 @@ That box is the lift. Everything below goes **inside** it.
 | **Inside panel** | **Elevator Inside Button Panel** (half / plate-offset if you want flush) | In the car. **Do not Register Panel.** Hold E to pick a floor. |
 | **Square corners / lintel** | **Door Trim 1m**, **Door Trim Corner**, **Plate Corner** | These **ride**. Use trim 1m to trim corner (opp corners) as the corner markers. Plate Corner above the cabin door fills the gap so it stays square. |
 
-Need **at least two** solid shaft walls against the car (the building around it), or the cabin has nothing to sit on. If the **shaft well** has no roof, the mod caps it with **concrete half-cubes** at the **real top of the shaft walls**. Build the shaft higher and that lid moves up. This is not the cabin ceiling.
+Need **at least two** solid shaft walls against the car (the building around it), or the cabin has nothing to sit on. If the **shaft well** has no roof (passenger **or** vehicle garage), the mod caps it with **concrete half-cubes** at the **real top of the shaft walls**. Build the shaft higher and that lid moves up. This is not the cabin ceiling.
 
 ---
 
