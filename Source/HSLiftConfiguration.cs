@@ -31,6 +31,9 @@ public class HSLiftConfigData
     public int MinX, MinZ, SizeX, SizeY, SizeZ;
     public int CurrentY;
 
+    // Static lid on the SHAFT well at the real top of the walls. Half-cube, not cabin blocks. 0 = none yet.
+    public int AutoShaftRoofY;
+
     // Car floor Y at each landing, kept sorted bottom to top.
     public List<HSLiftFloor> Floors = new List<HSLiftFloor>();
 

@@ -165,6 +165,231 @@ public static class HSLiftCar
             && InRect(cell.x, cell.z) && cell.y >= baseY && cell.y <= parent.y + 1;
     }
 
+    // Open SHAFT well: half-cube lid at the real top of the shaft walls. If you build the shaft higher, this moves up.
+    public static int EnsureShaftRoof(World world)
+    {
+        if (world == null || D == null || !D.HasCar || D.IsVehicleType) return 0;
+        int topStop = D.CurrentY;
+        if (D.Floors != null)
+            foreach (var f in D.Floors)
+                if (f != null && f.Y > topStop) topStop = f.Y;
+        int cabinTop = topStop + Math.Max(1, D.SizeY);
+        int lidY = FindShaftTopY(world, topStop);
+        if (lidY < cabinTop)
+        {
+            if (D.AutoShaftRoofY != 0 && !IsRegisteredFloorY(D.AutoShaftRoofY))
+                ClearShaftRoofLayer(world, D.AutoShaftRoofY);
+            D.AutoShaftRoofY = 0;
+            return 0;
+        }
+
+        var roof = ShaftRoofBlock();
+        if (roof.isair || roof.type == 0) return 0;
+
+        int oldY = D.AutoShaftRoofY;
+        List<HSLiftCell> cargo = null;
+        if (oldY != 0 && oldY != lidY && !IsRegisteredFloorY(oldY))
+        {
+            cargo = SnapshotRoofCargo(world, oldY);
+            RemoveRoofCargo(world, oldY, cargo);
+            ClearShaftRoofLayer(world, oldY);
+            ShiftRoofEntities(world, oldY, lidY);
+        }
+
+        var changes = new List<BlockChangeInfo>();
+        for (int dx = 0; dx < D.SizeX; dx++)
+        for (int dz = 0; dz < D.SizeZ; dz++)
+        {
+            var pos = new Vector3i(D.MinX + dx, lidY, D.MinZ + dz);
+            if (world.GetChunkFromWorldPos(pos) == null) continue;
+            var bv = world.GetBlock(pos);
+            if (!bv.isair && !IsShaftRoofPiece(bv)) continue;
+            if (!bv.isair && bv.type == roof.type) continue;
+            changes.Add(new BlockChangeInfo(pos, roof, 0, TextureFullArray.Default));
+        }
+        if (changes.Count > 0) world.SetBlocksRPC(changes);
+        if (cargo != null && cargo.Count > 0) PlaceRoofCargo(world, lidY, cargo);
+        D.AutoShaftRoofY = lidY;
+        if (changes.Count == 0 && (cargo == null || cargo.Count == 0)) return 0;
+        HSLiftDebug.Info("Shaft roof (half cube) at Y" + lidY + " (" + changes.Count + " lid, " + (cargo == null ? 0 : cargo.Count) + " on-roof).");
+        return changes.Count + (cargo == null ? 0 : cargo.Count);
+    }
+
+    static int FindShaftTopY(World world, int fromY)
+    {
+        int lastWall = -1;
+        int yMax = 255;
+        for (int y = fromY; y <= yMax; y++)
+        {
+            var probe = new Vector3i(D.MinX, y, D.MinZ);
+            if (world.GetChunkFromWorldPos(probe) == null) break;
+            if (ShaftHasWallsAt(world, y)) lastWall = y;
+            else if (lastWall >= 0 && y > lastWall + 1) break;
+        }
+        return lastWall;
+    }
+
+    static bool ShaftHasWallsAt(World world, int y)
+    {
+        int x0 = D.MinX - 1, x1 = D.MinX + D.SizeX;
+        int z0 = D.MinZ - 1, z1 = D.MinZ + D.SizeZ;
+        for (int x = x0; x <= x1; x++)
+        {
+            if (IsShaftWallBlock(world, new Vector3i(x, y, z0))) return true;
+            if (IsShaftWallBlock(world, new Vector3i(x, y, z1))) return true;
+        }
+        for (int z = z0 + 1; z <= z1 - 1; z++)
+        {
+            if (IsShaftWallBlock(world, new Vector3i(x0, y, z))) return true;
+            if (IsShaftWallBlock(world, new Vector3i(x1, y, z))) return true;
+        }
+        return false;
+    }
+
+    static bool IsShaftWallBlock(World world, Vector3i pos)
+    {
+        var bv = world.GetBlock(pos);
+        if (bv.isair || bv.Block == null) return false;
+        if (IsShaftRoofPiece(bv)) return false;
+        return true;
+    }
+
+    static bool IsShaftRoofPiece(BlockValue bv)
+    {
+        if (bv.isair || bv.Block == null) return false;
+        var n = bv.Block.GetBlockName();
+        return n != null && n.IndexOf("cubeHalf", StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    static BlockValue ShaftRoofBlock()
+    {
+        var bv = Block.GetBlockValue("concreteShapes:cubeHalf");
+        if (bv.isair || bv.type == 0) bv = Block.GetBlockValue("woodShapes:cubeHalf");
+        if (bv.isair || bv.type == 0) bv = Block.GetBlockValue("concreteShapes:cube");
+        return bv;
+    }
+
+    static void ClearShaftRoofLayer(World world, int y)
+    {
+        var changes = new List<BlockChangeInfo>();
+        for (int dx = 0; dx < D.SizeX; dx++)
+        for (int dz = 0; dz < D.SizeZ; dz++)
+        {
+            var pos = new Vector3i(D.MinX + dx, y, D.MinZ + dz);
+            if (world.GetChunkFromWorldPos(pos) == null) continue;
+            var bv = world.GetBlock(pos);
+            if (!IsShaftRoofPiece(bv)) continue;
+            changes.Add(new BlockChangeInfo(pos, BlockValue.Air, MarchingCubes.DensityAir));
+        }
+        if (changes.Count > 0) world.SetBlocksRPC(changes);
+    }
+
+    static List<HSLiftCell> SnapshotRoofCargo(World world, int lidY)
+    {
+        var cells = new List<HSLiftCell>();
+        int maxY = lidY + 24;
+        for (int y = lidY; y <= maxY; y++)
+        for (int dx = 0; dx < D.SizeX; dx++)
+        for (int dz = 0; dz < D.SizeZ; dz++)
+        {
+            var pos = new Vector3i(D.MinX + dx, y, D.MinZ + dz);
+            var chunk = world.GetChunkFromWorldPos(pos) as Chunk;
+            if (chunk == null) continue;
+            var bv = world.GetBlock(pos);
+            if (bv.isair || bv.ischild || bv.Block == null) continue;
+            if (bv.Block.shape != null && bv.Block.shape.IsTerrain()) continue;
+            if (y == lidY && IsShaftRoofPiece(bv)) continue;
+            int lx = World.toBlockXZ(pos.x), ly = World.toBlockY(pos.y), lz = World.toBlockXZ(pos.z);
+            TileEntity teCopy = null;
+            if (bv.Block.HasTileEntity)
+            {
+                try
+                {
+                    var te = world.GetTileEntity(pos);
+                    if (te != null) teCopy = te.Clone();
+                }
+                catch (Exception) { }
+            }
+            cells.Add(new HSLiftCell
+            {
+                Dx = dx,
+                Dy = y - lidY,
+                Dz = dz,
+                Bv = bv,
+                Density = chunk.GetDensity(lx, ly, lz),
+                Tex = chunk.GetTextureFullArray(lx, ly, lz),
+                Te = teCopy
+            });
+        }
+        return cells;
+    }
+
+    static void RemoveRoofCargo(World world, int lidY, List<HSLiftCell> cargo)
+    {
+        if (cargo == null || cargo.Count == 0) return;
+        cargo.Sort((a, b) => b.Dy.CompareTo(a.Dy));
+        var changes = new List<BlockChangeInfo>();
+        foreach (var c in cargo)
+            changes.Add(new BlockChangeInfo(new Vector3i(D.MinX + c.Dx, lidY + c.Dy, D.MinZ + c.Dz), BlockValue.Air, MarchingCubes.DensityAir));
+        if (changes.Count > 0) world.SetBlocksRPC(changes);
+    }
+
+    static Vector3i RoofCargoDest(int newLidY, HSLiftCell c)
+    {
+        return new Vector3i(D.MinX + c.Dx, newLidY + Math.Max(1, c.Dy), D.MinZ + c.Dz);
+    }
+
+    static void PlaceRoofCargo(World world, int lidY, List<HSLiftCell> cargo)
+    {
+        if (cargo == null || cargo.Count == 0) return;
+        cargo.Sort((a, b) => a.Dy.CompareTo(b.Dy));
+        var changes = new List<BlockChangeInfo>();
+        foreach (var c in cargo)
+        {
+            var pos = RoofCargoDest(lidY, c);
+            if (world.GetChunkFromWorldPos(pos) == null) continue;
+            var dest = world.GetBlock(pos);
+            if (!dest.isair && !IsShaftRoofPiece(dest)) continue;
+            changes.Add(new BlockChangeInfo(pos, c.Bv, c.Density, c.Tex));
+        }
+        if (changes.Count > 0) world.SetBlocksRPC(changes);
+        foreach (var c in cargo)
+        {
+            if (c.Te == null) continue;
+            var p = RoofCargoDest(lidY, c);
+            try
+            {
+                var dest = world.GetTileEntity(p);
+                if (dest == null) continue;
+                dest.CopyFrom(c.Te);
+                dest.localChunkPos = new Vector3i(World.toBlockXZ(p.x), World.toBlockY(p.y), World.toBlockXZ(p.z));
+                dest.SetModified();
+            }
+            catch (Exception) { }
+        }
+    }
+
+    static void ShiftRoofEntities(World world, int oldY, int newY)
+    {
+        int dy = newY - oldY;
+        if (dy == 0 || world == null) return;
+        var found = new List<Entity>();
+        var bb = new Bounds();
+        bb.SetMinMax(
+            new Vector3(D.MinX - 0.25f, oldY - 0.25f, D.MinZ - 0.25f),
+            new Vector3(D.MinX + D.SizeX + 0.25f, oldY + 8.5f, D.MinZ + D.SizeZ + 0.25f));
+        world.GetEntitiesInBounds(typeof(Entity), bb, found);
+        var delta = new Vector3(0f, dy, 0f);
+        for (int i = 0; i < found.Count; i++)
+        {
+            var e = found[i];
+            if (e == null || e is EntityPlayer) continue;
+            if (!InFootprint(UnityEngine.Mathf.FloorToInt(e.position.x), UnityEngine.Mathf.FloorToInt(e.position.z))) continue;
+            if (e.position.y < oldY - 0.1f || e.position.y > oldY + 8f) continue;
+            e.SetPosition(e.position + delta, true);
+        }
+    }
+
     static int ColumnHeight(List<HSLiftCell> cells, int x, int z)
     {
         int h = Math.Max(1, D.SizeY);
@@ -254,6 +479,7 @@ public static class HSLiftCar
         if (world == null) return "no world";
         if (!D.HasCar) return "car not set (hslift corner1 / corner2)";
         if (DropInteriorFloorExcludes() + AutoExcludeDoorPlatforms(world) > 0) HSLiftConfiguration.Save();
+        EnsureShaftRoof(world);
         for (int dy = 0; dy < (D.IsVehicleType ? Math.Max(2, D.SizeY) : D.SizeY); dy++)
         for (int dx = 0; dx < D.SizeX; dx++)
         for (int dz = 0; dz < D.SizeZ; dz++)
@@ -366,6 +592,7 @@ public static class HSLiftCar
         var name = bv.Block.GetBlockName();
         if (IsInsidePanel(bv.Block)) return null;
         if (IsRegisteredFloorY(pos.y)) return null;
+        if (D.AutoShaftRoofY != 0 && pos.y == D.AutoShaftRoofY) return null;
         if (D.IsVehicleType && HSLiftDoors.IsGarageOrRollUpName(name)) return null;
         if (allowPassThrough && (IsPassThrough(bv) || IsRidePiece(bv))) return null;
         HSLiftDebug.Verbose("Obstruction " + name + " at " + pos);

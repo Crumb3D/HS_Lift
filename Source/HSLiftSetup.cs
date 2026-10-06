@@ -229,6 +229,8 @@ public static class HSLiftSetup
                 d.Floors.Add(new HSLiftFloor { Name = name, Y = p.y });
                 RelabelIfStopBelowGround();
                 HSLiftConfiguration.SyncFloors();
+                var worldAdd = GameManager.Instance.World;
+                if (worldAdd != null) HSLiftCar.EnsureShaftRoof(worldAdd);
                 HSLiftConfiguration.Save();
                 var added = HSLiftConfiguration.FloorAt(p.y);
                 var shown = added != null ? HSLiftConfiguration.FloorDisplayName(added.Name) : name;
@@ -251,6 +253,8 @@ public static class HSLiftSetup
                     d.Floors.Add(new HSLiftFloor { Name = "G", Y = p.y });
                 RelabelWithGroundAt(p.y);
                 HSLiftConfiguration.SyncFloors();
+                var worldG = GameManager.Instance.World;
+                if (worldG != null) HSLiftCar.EnsureShaftRoof(worldG);
                 HSLiftConfiguration.Save();
                 return "Ground Floor set at this height. Other floors were renamed to match.\nFloors: " + HSLiftConfiguration.FloorList();
             }
@@ -270,6 +274,8 @@ public static class HSLiftSetup
                 if (f.Y == d.CurrentY) return "The car is parked at " + HSLiftConfiguration.FloorDisplayName(f.Name) + ". Send it to another floor first.";
                 d.Floors.Remove(f);
                 HSLiftConfiguration.SyncFloors();
+                var worldRm = GameManager.Instance.World;
+                if (worldRm != null) HSLiftCar.EnsureShaftRoof(worldRm);
                 HSLiftConfiguration.Save();
                 return HSLiftConfiguration.FloorDisplayName(f.Name) + " removed. Floors: " + HSLiftConfiguration.FloorList();
             }

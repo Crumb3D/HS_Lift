@@ -95,6 +95,8 @@ public class HSLiftController : MonoBehaviour
     GameObject preview;
     float previewUntil;
 
+    float nextShaftRoof;
+
     public void ScheduleAutoClose()
     {
         autoCloseAt = Time.unscaledTime + AutoCloseSeconds;
@@ -603,6 +605,17 @@ public class HSLiftController : MonoBehaviour
             }
             TickAutoClose();
             TickReopenIfBlocked();
+            if (LiftState == HSLiftState.Idle && Time.time >= nextShaftRoof)
+            {
+                nextShaftRoof = Time.time + 2f;
+                var wRoof = GameManager.Instance != null ? GameManager.Instance.World : null;
+                if (wRoof != null && D != null && D.HasCar && !D.IsVehicleType)
+                {
+                    int before = D.AutoShaftRoofY;
+                    if (HSLiftCar.EnsureShaftRoof(wRoof) > 0 || D.AutoShaftRoofY != before)
+                        HSLiftConfiguration.Save();
+                }
+            }
             if (preview != null)
             {
                 if (Time.time >= previewUntil) StopPreviewInternal();

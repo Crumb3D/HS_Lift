@@ -291,10 +291,10 @@ public class NetPackageHSLift : NetPackage
         flag = br.ReadBoolean();
         curY = br.ReadSingle();
         int n = br.ReadInt32();
+        int texN = br.ReadInt32();
         cells = null;
         if (n <= 0) return;
         cells = new List<HSLiftCell>(n);
-        int texN = br.ReadInt32();
         for (int i = 0; i < n; i++)
         {
             var cell = new HSLiftCell();

@@ -2,7 +2,7 @@
 
 Build your own passenger or vehicle elevators in **7 Days to Die**. You build the cabin or garage pad from vanilla blocks. HS Lift **moves** that structure — it does not spawn a premade car, and it will not chew through blocks in the shaft.
 
-**Version 1.0.1** — tested on **7 Days to Die 3.2**. Not claimed for 1.0, 2.0, or 3.3 Experimental.
+**Version 1.0.2** — tested on **7 Days to Die 3.2**. Not claimed for 1.0, 2.0, or 3.3 Experimental.
 
 License: [MIT](LICENSE). Author: Crumb.
 
@@ -174,6 +174,14 @@ F1 console (admin). `hslift` prints the full list. Common:
 ## Bugs and contributing
 
 Open an issue on the GitHub repository with the game version, what you built, and what happened. Pull requests that keep the current movement, door, and save behaviour are welcome. Do not send a copy of your `HSLift.json` if it contains your world coordinates unless you mean to.
+
+---
+
+## Changelog
+
+**1.0.2** — Dedicated clients no longer get kicked when the lift list arrives (config packet length). If the shaft well has no roof, the mod caps it with concrete half-cubes at the real top of the shaft walls; blocks sitting on that lid move with it.
+
+**1.0.1** — Lift saves stay in the world folder, not Mods.
 
 ---
 
