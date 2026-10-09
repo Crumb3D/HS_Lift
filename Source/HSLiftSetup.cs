@@ -429,6 +429,7 @@ public static class HSLiftSetup
         }
         bool moved = d.MinX != minX || d.MinZ != minZ || d.SizeX != maxX - minX + 1 || d.SizeZ != maxZ - minZ + 1;
         if (d.GaveWay != null) d.GaveWay.Clear();
+        if (d.SharedPlaced != null) d.SharedPlaced.Clear();
         d.MinX = minX; d.MinZ = minZ;
         d.SizeX = maxX - minX + 1;
         d.SizeY = HSLiftConfiguration.IsVehicle ? 1 : maxY - minY + 1;

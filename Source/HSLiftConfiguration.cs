@@ -57,6 +57,9 @@ public class HSLiftConfigData
     // landing slab). The car still owns these; when it leaves, it takes them and leaves the landing block alone.
     public int GaveWayY;
     public List<HSLiftJournalCell> GaveWay = new List<HSLiftJournalCell>();
+    // Car cells placed at GaveWayY inside a parked neighbour's box (shared wall line, cell was empty).
+    // Without this a block there with no GaveWay entry on either lift is taken to be the neighbour's.
+    public List<HSLiftJournalCell> SharedPlaced = new List<HSLiftJournalCell>();
 
     // Solid plate behind button panels so the empty part of their block isn't see-through.
     public bool PanelBacking; // leftover JSON field; ignored (old silver backing removed)
@@ -348,6 +351,7 @@ public static class HSLiftConfiguration
         if (d.SpeedBlocksPerSecond <= 0.05f) d.SpeedBlocksPerSecond = 1.5f;
         if (d.DoorReach <= 0) d.DoorReach = 2;
         if (d.GaveWay == null) d.GaveWay = new List<HSLiftJournalCell>();
+        if (d.SharedPlaced == null) d.SharedPlaced = new List<HSLiftJournalCell>();
         var saved = Data;
         Data = d;
         SyncFloors();

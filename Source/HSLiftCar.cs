@@ -515,6 +515,8 @@ public static class HSLiftCar
                 cells.Add(new HSLiftCell { Dx = dx, Dy = dy, Dz = dz, Bv = new BlockValue(theirs.OtherRaw), Density = theirs.OtherDensity, Tex = ToTex(theirs.OtherTex) });
                 continue;
             }
+            // Shared line next to a parked neighbour: unless we placed it, or the neighbour gave way to it, it is theirs.
+            if (neighbour != null && theirs == null && !SharedPlacedAt(baseY, dx, dy, dz)) continue;
             var bv = world.GetBlock(pos);
             if (bv.isair) continue;
             var block = bv.Block;
@@ -983,6 +985,7 @@ public static class HSLiftCar
         RestoreTileEntities(world, baseY, place);
         D.GaveWayY = baseY;
         D.GaveWay = gaveWay;
+        D.SharedPlaced = SharedCells(baseY, place);
         if (gaveWay.Count > 0) HSLiftDebug.Info("Parked at Y" + baseY + ": " + gaveWay.Count + " car block(s) gave way to landing blocks; the car keeps them for its next trip.");
         HSLiftDebug.Verbose("Placed " + place.Count + " car blocks back at Y" + baseY + " (walls first, then floor and ceiling; " + (cells.Count - place.Count) + " left as pass-through sheets)");
         return null;
@@ -1235,6 +1238,23 @@ public static class HSLiftCar
         return GaveWayAt(D, baseY, dx, dy, dz);
     }
 
+    static bool SharedPlacedAt(int baseY, int dx, int dy, int dz)
+    {
+        if (D.SharedPlaced == null || D.SharedPlaced.Count == 0 || D.GaveWayY != baseY) return false;
+        foreach (var s in D.SharedPlaced)
+            if (s != null && s.Dx == dx && s.Dy == dy && s.Dz == dz) return true;
+        return false;
+    }
+
+    static List<HSLiftJournalCell> SharedCells(int baseY, List<HSLiftCell> placed)
+    {
+        var shared = new List<HSLiftJournalCell>();
+        foreach (var c in placed)
+            if (ParkedNeighbourAt(Pos(c, baseY)) != null)
+                shared.Add(new HSLiftJournalCell { Dx = c.Dx, Dy = c.Dy, Dz = c.Dz });
+        return shared;
+    }
+
     static HSLiftJournalCell GaveWayAt(HSLiftConfigData d, int baseY, int dx, int dy, int dz)
     {
         if (d.GaveWay == null || d.GaveWay.Count == 0 || d.GaveWayY != baseY) return null;
@@ -1383,6 +1403,7 @@ public static class HSLiftCar
         if (restore.Count > 0) ApplyLayered(world, j.BaseY, restore, false);
         D.GaveWayY = j.BaseY;
         D.GaveWay = gaveWay;
+        D.SharedPlaced = SharedCells(j.BaseY, restore);
         HSLiftDebug.Info("Journal recovery: restored " + restore.Count + " car blocks at Y" + j.BaseY + " (" + already + " already in place).");
         D.CurrentY = j.BaseY;
         HSLiftConfiguration.Save();
