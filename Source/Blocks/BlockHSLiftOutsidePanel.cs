@@ -20,7 +20,7 @@ public class BlockHSLiftOutsidePanel : BlockPowered
             var pos = ParentPos(_blockPos, _blockValue);
             var lift = HSLiftConfiguration.RegisteredPanelOwner(pos);
             if (lift == null) return new BlockActivationCommand[0];
-            HSLiftConfiguration.Use(lift);
+            HSLiftConfiguration.Operate(lift);
             return new[] { new BlockActivationCommand("hsliftCall", "electric_switch", true, false, null) };
         }
         catch (Exception e)
@@ -73,7 +73,7 @@ public class BlockHSLiftOutsidePanel : BlockPowered
         {
             var pos = ParentPos(_blockPos, _blockValue);
             var lift = HSLiftConfiguration.RegisteredPanelOwner(pos);
-            if (lift != null) HSLiftConfiguration.Use(lift);
+            if (lift != null) HSLiftConfiguration.Operate(lift);
             var problem = HSLiftController.RequestFromOutsidePanel(pos);
             if (problem != null && _player != null)
                 GameManager.ShowTooltip(_player, string.Format(Localization.Get("hsliftNotReady"), problem));

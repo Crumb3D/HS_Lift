@@ -211,11 +211,36 @@ public static class HSLiftConfiguration
         HSLiftDebug.Info("Copied lift list into this world save.");
     }
 
+    // The lift the setup tool is editing. Only New Lift and Use This Lift call this.
     public static void Use(HSLiftConfigData d)
     {
         if (d == null) return;
         Data = d;
         ActiveId = d.ElevatorId;
+    }
+
+    // A door, call button or move. Does not change which lift is being edited.
+    public static void Operate(HSLiftConfigData d)
+    {
+        if (d == null) return;
+        Data = d;
+    }
+
+    public static void Editing()
+    {
+        var d = ById(ActiveId);
+        if (d != null) Data = d;
+    }
+
+    public static string HoldingHud()
+    {
+        var d = ById(ActiveId);
+        if (d == null) return "No lift";
+        int corners = (d.Corner1 != null ? 1 : 0) + (d.Corner2 != null ? 1 : 0);
+        var corner = d.HasCar ? "Corners set" : "Corners " + corners + " of 2";
+        int floors = d.Floors != null ? d.Floors.Count : 0;
+        int panels = d.Panels != null ? d.Panels.Count : 0;
+        return d.ElevatorId + "\n" + Lifts.Count + " lifts\n" + corner + "\nFloors " + floors + "\nPanels " + panels;
     }
 
     static HSLiftFile MakeFile()
@@ -381,7 +406,6 @@ public static class HSLiftConfiguration
                 var i = Lifts.FindIndex(l => l.ElevatorId == Data.ElevatorId);
                 if (i >= 0) Lifts[i] = Data;
                 else if (!Lifts.Contains(Data)) Lifts.Add(Data);
-                ActiveId = Data.ElevatorId;
             }
             if (HSLiftNet.IsRemoteClient) return;
             var dir = RuntimeDir;

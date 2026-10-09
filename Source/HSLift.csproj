@@ -105,6 +105,7 @@
     <Compile Include="HSLiftSounds.cs" />
     <Compile Include="HSLiftSettings.cs" />
     <Compile Include="HSLiftFloorMenu.cs" />
+    <Compile Include="HSLiftHud.cs" />
     <Compile Include="HSLiftActivation.cs" />
     <Compile Include="HSLiftPaint.cs" />
     <Compile Include="HSLiftAtlas.cs" />

@@ -16,7 +16,7 @@ public class BlockHSLiftInsidePanel : Block
             var pos = BlockHSLiftOutsidePanel.ParentPos(_blockPos, _blockValue);
             var lift = HSLiftConfiguration.LiftForInsidePanel(pos);
             if (lift == null) return own.ToArray();
-            HSLiftConfiguration.Use(lift);
+            HSLiftConfiguration.Operate(lift);
             own.AddRange(HSLiftFloorMenu.Commands(lift));
         }
         catch (Exception e) { HSLiftDebug.Error("Inside panel floor list failed", e); }
@@ -70,7 +70,7 @@ public class BlockHSLiftInsidePanel : Block
                     GameManager.ShowTooltip(_player, Localization.Get("hsliftUnregistered"));
                 return true;
             }
-            HSLiftConfiguration.Use(lift);
+            HSLiftConfiguration.Operate(lift);
             int floor = HSLiftFloorMenu.Parse(_commandName, lift);
             if (floor < 0) return true;
             var problem = HSLiftController.RequestFromInsidePanel(pos, floor);

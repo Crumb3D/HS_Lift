@@ -92,12 +92,12 @@ public static class HSLiftDoors
         int ownerDist = int.MaxValue;
         foreach (var d in HSLiftConfiguration.Lifts)
         {
-            HSLiftConfiguration.Use(d);
+            HSLiftConfiguration.Operate(d);
             int dist = DoorDistance(parentPos, parentBv);
             if (dist >= 0 && dist < ownerDist) { owner = d; ownerDist = dist; }
         }
-        if (owner != null) HSLiftConfiguration.Use(owner);
-        else if (saved != null) HSLiftConfiguration.Use(saved);
+        if (owner != null) HSLiftConfiguration.Operate(owner);
+        else if (saved != null) HSLiftConfiguration.Operate(saved);
         return owner;
     }
 

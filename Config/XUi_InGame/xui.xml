@@ -1,0 +1,5 @@
+<configs>
+	<append xpath="/xui/window_group[@name='toolbelt']">
+		<window name="HUDHSLift"/>
+	</append>
+</configs>

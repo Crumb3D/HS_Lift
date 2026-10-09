@@ -10,14 +10,19 @@ public static class HSLiftSetup
     public static void Tell(EntityPlayerLocal player, string msg)
     {
         if (string.IsNullOrEmpty(msg)) return;
-        if (player != null) GameManager.ShowTooltip(player, msg);
-        else SdtdConsole.Instance.Output(msg);
+        int nl = msg.IndexOf('\n');
+        // The lift list and the long notes go to the console. The screen only gets the first line.
+        if (nl >= 0 && SdtdConsole.Instance != null) SdtdConsole.Instance.Output(msg);
+        var screen = nl < 0 ? msg : msg.Substring(0, nl);
+        if (player != null) GameManager.ShowTooltip(player, screen);
+        else if (nl < 0 && SdtdConsole.Instance != null) SdtdConsole.Instance.Output(msg);
     }
 
     public static string Execute(string sub, string arg, string extra, EntityPlayerLocal player)
     {
         if (HSLiftNet.IsRemoteClient && sub != "status" && sub != "list" && sub != "preview")
             return HSLiftNet.SendSetup(sub, arg, extra, player);
+        HSLiftConfiguration.Editing();
         if (sub == "floor") return FloorCommand(arg, extra, player);
         if (sub == "go") return HSLiftController.RequestFloor(arg, "console") ?? "Going.";
         return Run(sub, arg, player);
@@ -92,7 +97,7 @@ public static class HSLiftSetup
                 if (HSLiftConfiguration.Lifts.Count == 0) HSLiftConfiguration.NewLift("ped");
                 else if (HSLiftConfiguration.Data == target) HSLiftConfiguration.Use(HSLiftConfiguration.Lifts[0]);
                 HSLiftConfiguration.Save();
-                return target.ElevatorId + " deleted (setup only; its blocks stay in the world). Now editing " + HSLiftConfiguration.Data.ElevatorId + ".\n" + HSLiftConfiguration.ListLifts();
+                return target.ElevatorId + " deleted. Now editing " + HSLiftConfiguration.Data.ElevatorId + ".\n" + HSLiftConfiguration.ListLifts();
             }
             case "type":
             case "new":
@@ -102,7 +107,7 @@ public static class HSLiftSetup
                 var hint = arg == "vehicle"
                     ? " Mark opposite corners of the FLOOR only (same Y). Garage / roll-up doors stay at each landing."
                     : " Mark opposite corners of the cabin (3D box). Elevator doors.";
-                return "Started " + created.ElevatorId + " (" + created.Type + ")." + hint + " Other lifts were not changed.\n" + HSLiftConfiguration.ListLifts();
+                return "Started " + created.ElevatorId + " (" + created.Type + "). Now editing it.\n" + hint + "\n" + HSLiftConfiguration.ListLifts();
             }
         }
 
@@ -168,8 +173,6 @@ public static class HSLiftSetup
             }
             case "debris":
             {
-                Vector3i p;
-                if (AimedBlock(player, out p) == null) BindAimedLift(p);
                 return HSLiftCar.ClearDebris(GameManager.Instance.World);
             }
             case "reset":
@@ -249,7 +252,6 @@ public static class HSLiftSetup
                 Vector3i p;
                 var err = AimedBlock(player, out p);
                 if (err != null) return err;
-                BindAimedLift(p);
                 d = HSLiftConfiguration.Data;
                 if (!d.HasCar) return d.ElevatorId + " has no car yet: set Corner 1, then Corner 2.";
                 if (string.IsNullOrEmpty(name) || name.Contains(" ")) name = NextFloorName(p.y);
@@ -279,7 +281,6 @@ public static class HSLiftSetup
                 Vector3i p;
                 var err = AimedBlock(player, out p);
                 if (err != null) return err;
-                BindAimedLift(p);
                 d = HSLiftConfiguration.Data;
                 if (!d.HasCar) return d.ElevatorId + " has no car yet: set Corner 1, then Corner 2.";
                 var same = HSLiftConfiguration.FloorAt(p.y);
@@ -479,7 +480,6 @@ public static class HSLiftSetup
         Vector3i p;
         var err = AimedBlock(player, out p);
         if (err != null) return err;
-        BindAimedLift(p);
         d = HSLiftConfiguration.Data;
         var world = GameManager.Instance.World;
         var aimedBv = world.GetBlock(p);
@@ -527,16 +527,6 @@ public static class HSLiftSetup
             panel = BlockHSLiftOutsidePanel.ParentPos(p, bv);
         }
         return best != int.MaxValue;
-    }
-
-    static void BindAimedLift(Vector3i p)
-    {
-        // A lift still being set up (no car corners yet) has no shaft to be "near"; keep it selected
-        // so its panels and floors don't land on the finished lift next door.
-        var cur = HSLiftConfiguration.Data;
-        if (cur != null && !cur.HasCar) return;
-        var d = HSLiftConfiguration.LiftAt(p) ?? HSLiftConfiguration.LiftNearXZ(p);
-        if (d != null) HSLiftConfiguration.Use(d);
     }
 
     public static string AimedBlock(EntityPlayerLocal player, out Vector3i pos)

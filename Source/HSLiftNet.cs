@@ -394,7 +394,7 @@ public abstract class NetPackageHSLiftCore : NetPackage
                     if (!string.IsNullOrEmpty(liftId))
                     {
                         var lift = HSLiftConfiguration.ById(liftId);
-                        if (lift != null) HSLiftConfiguration.Use(lift);
+                        if (lift != null) HSLiftConfiguration.Operate(lift);
                     }
                     if (floorIndex >= 0)
                         HSLiftNet.ReplyTip(Sender, HSLiftNet.NotReady(HSLiftController.RequestInsideFloor(floorIndex, "remote")));
@@ -406,7 +406,7 @@ public abstract class NetPackageHSLiftCore : NetPackage
                     if (!string.IsNullOrEmpty(liftId))
                     {
                         var doorLift = HSLiftConfiguration.ById(liftId);
-                        if (doorLift != null) HSLiftConfiguration.Use(doorLift);
+                        if (doorLift != null) HSLiftConfiguration.Operate(doorLift);
                     }
                     if (flag) HSLiftDoors.OpenAtCar(world);
                     else HSLiftDoors.CloseAtCar(world);

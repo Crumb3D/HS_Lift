@@ -20,7 +20,7 @@ public static class HSLiftDoorPatch
             if (_commandName != null && _commandName.StartsWith("hsliftFloor", StringComparison.Ordinal))
             {
                 var playerLift = HSLiftConfiguration.LiftForPlayer(_player);
-                if (playerLift != null) HSLiftConfiguration.Use(playerLift);
+                if (playerLift != null) HSLiftConfiguration.Operate(playerLift);
                 int floor = HSLiftFloorMenu.Parse(_commandName, playerLift ?? HSLiftConfiguration.Data);
                 if (floor >= 0)
                 {

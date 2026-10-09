@@ -74,6 +74,7 @@ public class ItemActionHSLiftTool : ItemAction
         try
         {
             radial.ResetRadialEntries();
+            HSLiftConfiguration.Editing();
             var d = HSLiftConfiguration.Data ?? new HSLiftConfigData();
             if (d.Panels == null) d.Panels = new System.Collections.Generic.List<HSLiftPanelEntry>();
             bool needCorner1 = d.Corner1 == null;

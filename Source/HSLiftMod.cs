@@ -23,7 +23,7 @@ public class HSLiftMod : IModApi
         {
             HSLiftDebug.Error("Could not move lift save out of the mod folder", e);
         }
-        HSLiftDebug.Info("Init v1.0.21 - setup tool keeps a new lift selected, side-by-side panel/door binding, landings stay put, 3.3 paints; admin: hslift");
+        HSLiftDebug.Info("Init v1.0.22 - active lift stays until New or Use This Lift, tool readout; admin: hslift");
         HSLiftNet.RegisterPackage();
         ModEvents.GameStartDone.RegisterHandler(OnGameStartDone);
         ModEvents.WorldShuttingDown.RegisterHandler(OnWorldShuttingDown);

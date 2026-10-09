@@ -36,7 +36,7 @@ public class HSLiftController : MonoBehaviour
     public static bool Bind(HSLiftConfigData d)
     {
         if (d == null) return false;
-        HSLiftConfiguration.Use(d);
+        HSLiftConfiguration.Operate(d);
         Ensure(d);
         return true;
     }
@@ -49,7 +49,7 @@ public class HSLiftController : MonoBehaviour
 
     void Push()
     {
-        if (Bound != null) HSLiftConfiguration.Use(Bound);
+        if (Bound != null) HSLiftConfiguration.Operate(Bound);
     }
 
     public static void Forget(HSLiftConfigData d)
