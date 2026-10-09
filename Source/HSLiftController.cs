@@ -501,7 +501,9 @@ public class HSLiftController : MonoBehaviour
         }
         cells = captured;
         HSLiftCar.WriteJournal(fromY, cells);
+        HSLiftFloorSigns.PrepareRide(cells, HSLiftConfiguration.FloorAt(fromY));
         var root = HSLiftCar.BuildVisual(world, cells, true, fromY);
+        HSLiftFloorSigns.Watch(root, cells);
         move.Begin(root, fromY, targetY);
         HSLiftCar.RemoveFromWorld(world, fromY, cells);
         LiftState = targetY > fromY ? HSLiftState.MovingUp : HSLiftState.MovingDown;
@@ -529,6 +531,7 @@ public class HSLiftController : MonoBehaviour
                 float beforeY = move.CurY;
                 bool done = move.Step(Time.fixedDeltaTime, D.SpeedBlocksPerSecond);
                 CarryRiders(beforeY, move.CurY - beforeY);
+                HSLiftFloorSigns.UpdatePassing(GameManager.Instance.World, move.CurY, fromY, move.TargetY);
                 if (done) move.Apply();
                 return;
             }
@@ -787,6 +790,7 @@ public class HSLiftController : MonoBehaviour
         D.CurrentY = y;
         HSLiftConfiguration.Save();
         HSLiftCar.ClearJournal();
+        HSLiftFloorSigns.Unwatch();
         StopMoveSound();
         PlayAt(D.ArriveSound, y);
         HSLiftNet.BroadcastMoveEnd(D.ElevatorId, y);
@@ -898,7 +902,9 @@ public class HSLiftController : MonoBehaviour
         HSLiftSounds.StopParked();
         c.cabinTrack = musicFile;
         var world = GameManager.Instance != null ? GameManager.Instance.World : null;
+        HSLiftFloorSigns.PrepareRide(captured, HSLiftConfiguration.FloorAt(parkedY));
         var root = HSLiftCar.BuildVisual(world, captured, true, parkedY);
+        HSLiftFloorSigns.Watch(root, captured);
         c.move.Begin(root, parkedY, targetY);
         c.move.CurY = curY;
         c.move.Apply();
@@ -915,6 +921,7 @@ public class HSLiftController : MonoBehaviour
         if (c == null) return;
         c.Push();
         d.CurrentY = y;
+        HSLiftFloorSigns.Unwatch();
         c.StopMoveSound();
         c.PlayAt(d.ArriveSound, y);
         c.releasing = c.move.Root;

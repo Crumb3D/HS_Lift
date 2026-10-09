@@ -2,7 +2,7 @@
 
 Build your own passenger or vehicle elevators in **7 Days to Die**. You build the cabin or garage pad from vanilla blocks. HS Lift **moves** that structure — it does not spawn a premade car, and it will not chew through blocks in the shaft.
 
-**Version 1.0.32** — dual-load **7 Days to Die 3.2 and 3.3**. Cabin paints use free opaque atlas slots on 3.2; on 3.3 the array is enlarged for the Lift paints.
+**Version 1.0.33** — dual-load **7 Days to Die 3.2 and 3.3**. Cabin paints use free opaque atlas slots on 3.2; on 3.3 the array is enlarged for the Lift paints.
 
 License: [MIT](LICENSE). Author: Crumb.
 
@@ -186,6 +186,8 @@ Open an issue on the GitHub repository with the game version, what you built, an
 ---
 
 ## Changelog
+
+**1.0.33** — A floor sign inside the cabin shows the floor the car is on, and the floor it is passing while it moves. It no longer sticks on G or goes blank on the way.
 
 **1.0.32** — Cabin music stays looping inside the car. It is background volume, not a stereo in your ears. Open doors let it out muffled, and it fades up as you come in. Stepping out does not cut it off.
 

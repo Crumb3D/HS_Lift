@@ -1105,6 +1105,7 @@ public static class HSLiftCar
                     foreach (var col in model.GetComponentsInChildren<Collider>(true)) col.enabled = false;
                     foreach (var mb in model.GetComponentsInChildren<MonoBehaviour>(true)) mb.enabled = false;
                     HideFocusHelpers(model);
+                    HSLiftFloorSigns.StampModel(holder, model, c, baseY);
                     var cellPos = new Vector3i(D.MinX + c.Dx, baseY + c.Dy, D.MinZ + c.Dz);
                     // Sample closed pose once; leave animator off so it does not swing on departure.
                     var te = world.GetTileEntity(cellPos) as TileEntityComposite;
