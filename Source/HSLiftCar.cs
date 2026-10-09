@@ -1291,7 +1291,15 @@ public static class HSLiftCar
         return GaveWayAt(owner, owner.CurrentY, p.x - owner.MinX, p.y - owner.CurrentY, p.z - owner.MinZ);
     }
 
-    // Two plates of the same material facing opposite ways in one cell become that material's Plate Double.
+    static readonly string[,] DoubleShapes = {
+        { "plate", "plateDouble" },
+        { "doorTrim1m", "doorTrim1mDouble" },
+        { "doorTrimCorner", "doorTrimCornerDouble" },
+    };
+
+    // Two singles of the same material and shape in one cell (plate, door trim 1m, door trim corner) become
+    // that shape's Double. Its rotation is the one whose bounds match both singles together; if none does,
+    // the shapes don't line up (e.g. both on the same side) and there is no merge.
     static bool TryPlateDouble(BlockValue mine, BlockValue theirs, out BlockValue dbl)
     {
         dbl = BlockValue.Air;
@@ -1299,12 +1307,54 @@ public static class HSLiftCar
         var a = mine.Block.GetBlockName();
         if (!string.Equals(a, theirs.Block.GetBlockName(), StringComparison.OrdinalIgnoreCase)) return false;
         int c = a.LastIndexOf(':');
-        if (c < 0 || !string.Equals(a.Substring(c + 1), "plate", StringComparison.OrdinalIgnoreCase)) return false;
-        var v = Block.GetBlockValue(a.Substring(0, c + 1) + "plateDouble");
-        if (v.isair || v.type == 0) return false;
-        v.rotation = theirs.rotation;
+        if (c < 0) return false;
+        var shape = a.Substring(c + 1);
+        string doubleShape = null;
+        for (int i = 0; i < DoubleShapes.GetLength(0); i++)
+            if (string.Equals(shape, DoubleShapes[i, 0], StringComparison.OrdinalIgnoreCase)) doubleShape = DoubleShapes[i, 1];
+        if (doubleShape == null) return false;
+        var v = Block.GetBlockValue(a.Substring(0, c + 1) + doubleShape);
+        if (v.isair || v.type == 0 || v.Block == null || v.Block.shape == null) return false;
+
+        Bounds bm, bt;
+        if (!ShapeBounds(mine, out bm) || !ShapeBounds(theirs, out bt)) return false;
+        var want = bm;
+        want.Encapsulate(bt);
+        int best = -1;
+        float bestErr = float.MaxValue;
+        for (int r = 0; r < 24; r++)
+        {
+            v.rotation = (byte)r;
+            Bounds bd;
+            if (!ShapeBounds(v, out bd)) return false;
+            float err = MaxAbs(bd.min - want.min, bd.max - want.max);
+            if (err < bestErr) { bestErr = err; best = r; }
+        }
+        if (best < 0 || bestErr > 0.12f)
+        {
+            HSLiftDebug.Verbose("No " + doubleShape + " rotation fits " + a + " rot " + mine.rotation + " + rot " + theirs.rotation + " (best error " + bestErr.ToString("0.00") + ")");
+            return false;
+        }
+        v.rotation = (byte)best;
         dbl = v;
         return true;
+    }
+
+    static bool ShapeBounds(BlockValue bv, out Bounds b)
+    {
+        b = default(Bounds);
+        var shape = bv.Block != null ? bv.Block.shape : null;
+        if (shape == null) return false;
+        var arr = shape.GetBounds(bv);
+        if (arr == null || arr.Length == 0) return false;
+        b = arr[0];
+        return true;
+    }
+
+    static float MaxAbs(Vector3 a, Vector3 b)
+    {
+        return Mathf.Max(Mathf.Max(Mathf.Abs(a.x), Mathf.Abs(a.y), Mathf.Abs(a.z)),
+                         Mathf.Max(Mathf.Abs(b.x), Mathf.Abs(b.y), Mathf.Abs(b.z)));
     }
 
     // Paint is one byte per face; keep whatever each plate had painted, the neighbour's first.

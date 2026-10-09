@@ -23,7 +23,7 @@ public class HSLiftMod : IModApi
         {
             HSLiftDebug.Error("Could not move lift save out of the mod folder", e);
         }
-        HSLiftDebug.Info("Init v1.0.19 - shared wall ownership, landings stay put, 3.3 paints; admin: hslift");
+        HSLiftDebug.Info("Init v1.0.20 - shared wall doubles for plates and door trims, landings stay put, 3.3 paints; admin: hslift");
         HSLiftNet.RegisterPackage();
         ModEvents.GameStartDone.RegisterHandler(OnGameStartDone);
         ModEvents.WorldShuttingDown.RegisterHandler(OnWorldShuttingDown);

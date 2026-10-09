@@ -2,7 +2,7 @@
 
 Build your own passenger or vehicle elevators in **7 Days to Die**. You build the cabin or garage pad from vanilla blocks. HS Lift **moves** that structure — it does not spawn a premade car, and it will not chew through blocks in the shaft.
 
-**Version 1.0.19** — dual-load **7 Days to Die 3.2 and 3.3**. Cabin paints use free opaque atlas slots on 3.2; on 3.3 the array is enlarged by three slots.
+**Version 1.0.20** — dual-load **7 Days to Die 3.2 and 3.3**. Cabin paints use free opaque atlas slots on 3.2; on 3.3 the array is enlarged by three slots.
 
 License: [MIT](LICENSE). Author: Crumb.
 
@@ -112,7 +112,7 @@ Do **not** build cabin **walls** out of sheets.
 
 When the car stops at a floor, any landing block already sitting in a car cell (sheets, Plate Double, door trim, the floor slab) stays where it is, and the car leaves it behind when it moves on.
 
-**Two lifts side by side** can share one wall line: set the second lift's corners so its wall sits in the same blocks as the first lift's wall. The corners refuse any deeper overlap. When both cars are parked at the same height, each pair of plates in the shared line joins into one **Plate Double** (same material only). When either car leaves, the other car's single plate goes back. A landing door belongs to the lift it is in front of: a door is never bound to a lift through a solid wall.
+**Two lifts side by side** can share one wall line: set the second lift's corners so its wall sits in the same blocks as the first lift's wall. The corners refuse any deeper overlap. When both cars are parked at the same height, each pair of plates in the shared line joins into one **Plate Double**, and the trims at its ends join into **Door Trim 1m Double** / **Door Trim Corner Double** (same material and shape only). When either car leaves, the other car's single plate goes back. A landing door belongs to the lift it is in front of: a door is never bound to a lift through a solid wall.
 
 Anything you place **inside the car box** rides with it, including chests and lanterns. Terrain / dirt cannot. Keep the lift’s power wire on an **outside** panel.
 
@@ -186,6 +186,8 @@ Open an issue on the GitHub repository with the game version, what you built, an
 ---
 
 ## Changelog
+
+**1.0.20** — Shared wall line: Door Trim 1m and Door Trim Corner pairs join into their Double shapes too. The Double is turned to cover both singles.
 
 **1.0.19** — Shared wall line: a car never takes the neighbouring lift's plates, including when only one of the two lifts has a wall in that line.
 
