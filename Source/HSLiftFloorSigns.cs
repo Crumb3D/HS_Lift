@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 // Vanilla wall letters/numbers (woodShapes:signLetter_g, signNumber_1, …).
 // Place a G (or 1, 2, …) near each outside door (ped elevator or vehicle garage); they switch to the car's floor.
+// Letters only hold one character, so writable signs showing a floor label (B2, 10, …) are kept in step too.
 public static class HSLiftFloorSigns
 {
     const int Reach = 3;
@@ -48,20 +49,20 @@ public static class HSLiftFloorSigns
     static void Apply(World world, HSLiftFloor floor)
     {
         if (world == null || D == null || !D.HasCar || floor == null) return;
-        var token = HSLiftConfiguration.FloorSignToken(floor.Name);
-        if (D.ElevatorId == lastLiftId && string.Equals(lastSignToken, token, StringComparison.OrdinalIgnoreCase)) return;
+        var text = HSLiftConfiguration.FloorSignText(floor.Name);
+        if (D.ElevatorId == lastLiftId && string.Equals(lastSignToken, text, StringComparison.OrdinalIgnoreCase)) return;
         var shape = ShapeForFloor(floor.Name);
-        if (shape == null) return;
 
         var changes = new List<BlockChangeInfo>();
         var seen = new HashSet<Vector3i>();
+        int written = 0;
         foreach (var a in Anchors(world))
-            ScanAround(world, a, shape, changes, seen);
+            written += ScanAround(world, a, shape, text, changes, seen);
         lastLiftId = D.ElevatorId;
-        lastSignToken = token;
-        if (changes.Count == 0) return;
-        world.SetBlocksRPC(changes);
-        HSLiftDebug.Verbose("Floor signs: " + changes.Count + " set to " + floor.Name + " (" + HSLiftConfiguration.FloorDisplayName(floor.Name) + ")");
+        lastSignToken = text;
+        if (changes.Count > 0) world.SetBlocksRPC(changes);
+        if (changes.Count > 0 || written > 0)
+            HSLiftDebug.Verbose("Floor signs: " + changes.Count + " letter(s), " + written + " writable sign(s) set to " + text + " (" + HSLiftConfiguration.FloorDisplayName(floor.Name) + ")");
     }
 
     static IEnumerable<Vector3i> Anchors(World world)
@@ -78,8 +79,9 @@ public static class HSLiftFloorSigns
             yield return p.Pos;
     }
 
-    static void ScanAround(World world, Vector3i center, string shape, List<BlockChangeInfo> changes, HashSet<Vector3i> seen)
+    static int ScanAround(World world, Vector3i center, string shape, string text, List<BlockChangeInfo> changes, HashSet<Vector3i> seen)
     {
+        int written = 0;
         int yHi = Math.Max(2, D.DoorHeight);
         for (int dy = -1; dy <= yHi; dy++)
         for (int dx = -Reach; dx <= Reach; dx++)
@@ -90,6 +92,8 @@ public static class HSLiftFloorSigns
             if (world.GetChunkFromWorldPos(pos) == null) continue;
             var bv = world.GetBlock(pos);
             if (bv.isair || bv.ischild) continue;
+            if (TryWriteSign(world, pos, text)) { written++; continue; }
+            if (shape == null) continue;
             string name = bv.Block.GetBlockName();
             char glyph;
             if (!TryGlyph(name, out glyph) || !IsThisLiftFloorGlyph(glyph)) continue;
@@ -104,6 +108,61 @@ public static class HSLiftFloorSigns
             int lx = World.toBlockXZ(pos.x), ly = World.toBlockY(pos.y), lz = World.toBlockXZ(pos.z);
             changes.Add(new BlockChangeInfo(pos, nv, chunk.GetDensity(lx, ly, lz), chunk.GetTextureFullArray(lx, ly, lz)));
         }
+        return written;
+    }
+
+    // Vanilla writable signs (Wood Sign 1x1 etc.) only become floor displays once a player has written
+    // one of this lift's floor labels on them (G, B2, 10 ...); any other text is left alone.
+    // They then read "Floor: <landing the sign is on>" / "Lift: <floor the car is at>".
+    static bool TryWriteSign(World world, Vector3i pos, string carText)
+    {
+        var te = world.GetTileEntity(pos) as TileEntityComposite;
+        if (te == null) return false;
+        var sign = te.GetFeature<ITileEntitySignable>();
+        if (sign == null) return false;
+        var current = sign.GetAuthoredText();
+        var now = current != null && current.Text != null ? current.Text.Trim() : "";
+        if (!IsThisLiftFloorText(now) && !IsDisplayText(now)) return false;
+        var landing = LandingFor(pos.y);
+        if (landing == null) return false;
+        var text = FloorWord + HSLiftConfiguration.FloorSignText(landing.Name) + "\n" + LiftWord + carText;
+        if (string.Equals(now, text, StringComparison.Ordinal)) return false;
+        try
+        {
+            sign.SetText(text, true, current.Author);
+            return true;
+        }
+        catch (Exception e)
+        {
+            HSLiftDebug.Warn("Floor sign at " + pos + " not updated: " + e.Message);
+            return false;
+        }
+    }
+
+    const string FloorWord = "Floor: ";
+    const string LiftWord = "Lift: ";
+
+    static bool IsDisplayText(string text)
+    {
+        return text.StartsWith(FloorWord.Trim(), StringComparison.OrdinalIgnoreCase)
+            && text.IndexOf(LiftWord.Trim(), StringComparison.OrdinalIgnoreCase) > 0;
+    }
+
+    // The landing a sign belongs to: the highest floor at or below it, within one door height.
+    static HSLiftFloor LandingFor(int signY)
+    {
+        HSLiftFloor best = null;
+        foreach (var f in D.Floors)
+            if (f.Y <= signY && signY <= f.Y + D.DoorHeight && (best == null || f.Y > best.Y)) best = f;
+        return best;
+    }
+
+    static bool IsThisLiftFloorText(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return false;
+        foreach (var f in D.Floors)
+            if (string.Equals(HSLiftConfiguration.FloorSignText(f.Name), text, StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
     }
 
     static bool IsThisLiftFloorGlyph(char glyph)

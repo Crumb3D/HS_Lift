@@ -1,26 +1,19 @@
 <configs>
 	<append xpath="/paints">
-		<!-- Same stainless atlas as the fridge doors; listed as Elevator Silver on the paintbrush (Metal group). -->
-		<paint id="240" name="txName_HSLiftSilver">
-			<property name="TextureId" value="267"/>
-			<property name="Group" value="txGroupMetal"/>
-			<property name="PaintCost" value="1"/>
-			<property name="SortIndex" value="99"/>
-		</paint>
 		<paint id="241" name="txName_HSLiftFloor">
-			<property name="TextureId" value="12"/>
+			<property name="TextureId" value="508"/>
 			<property name="Group" value="txGroupMetal"/>
 			<property name="PaintCost" value="1"/>
 			<property name="SortIndex" value="100"/>
 		</paint>
 		<paint id="242" name="txName_HSLiftWall">
-			<property name="TextureId" value="12"/>
+			<property name="TextureId" value="509"/>
 			<property name="Group" value="txGroupMetal"/>
 			<property name="PaintCost" value="1"/>
 			<property name="SortIndex" value="101"/>
 		</paint>
 		<paint id="243" name="txName_HSLiftCeiling">
-			<property name="TextureId" value="12"/>
+			<property name="TextureId" value="510"/>
 			<property name="Group" value="txGroupMetal"/>
 			<property name="PaintCost" value="1"/>
 			<property name="SortIndex" value="102"/>

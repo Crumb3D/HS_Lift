@@ -74,7 +74,7 @@ public class BlockHSLiftInsidePanel : Block
             int floor = HSLiftFloorMenu.Parse(_commandName, lift);
             if (floor < 0) return true;
             var problem = HSLiftController.RequestFromInsidePanel(pos, floor);
-            if (problem != null && _player != null)
+            if (problem != null && _player != null && !HSLiftFloorMenu.IsAlreadyHere(problem))
                 GameManager.ShowTooltip(_player, string.Format(Localization.Get("hsliftNotReady"), problem));
         }
         catch (Exception e)

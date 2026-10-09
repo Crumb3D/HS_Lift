@@ -13,11 +13,8 @@ public static class HSLiftDoorPatch
         return name != null && (name == cmd || name.EndsWith(":" + cmd, StringComparison.Ordinal));
     }
 
-    const int NoPair = 0, PairOpen = 1, PairClose = 2;
-
-    static bool Prefix(string _commandName, WorldBase _world, Vector3i _blockPos, BlockValue _blockValue, EntityPlayerLocal _player, ref bool __result, out int __state)
+    static bool Prefix(string _commandName, WorldBase _world, Vector3i _blockPos, BlockValue _blockValue, EntityPlayerLocal _player, ref bool __result)
     {
-        __state = NoPair;
         try
         {
             if (_commandName != null && _commandName.StartsWith("hsliftFloor", StringComparison.Ordinal))
@@ -28,7 +25,7 @@ public static class HSLiftDoorPatch
                 if (floor >= 0)
                 {
                     var err = HSLiftController.RequestFromDoorMenu(_player, floor);
-                    if (err != null && _player != null)
+                    if (err != null && _player != null && !HSLiftFloorMenu.IsAlreadyHere(err))
                         GameManager.ShowTooltip(_player, string.Format(Localization.Get("hsliftNotReady"), err));
                     __result = true;
                     return false;
@@ -48,21 +45,36 @@ public static class HSLiftDoorPatch
             if ((!open && !close) || !HSLiftDoors.IsElevatorDoor(_blockValue.Block)) return true;
             var parent = _blockValue.ischild ? _blockValue.Block.multiBlockPos.GetParentPos(_blockPos, _blockValue) : _blockPos;
             var parentBv = _world.GetBlock(parent);
-            if (HSLiftDoors.BindDoor(parent, parentBv) == null) return true;
+            if (HSLiftDoors.BindDoor(parent, parentBv) == null)
+            {
+                HSLiftDebug.Info("Door " + _commandName + " at " + parent + " is not bound to a lift");
+                return true;
+            }
             bool behind = HSLiftDoors.CarIsBehind(parent, parentBv);
             bool vehicle = HSLiftConfiguration.IsVehicle;
             var doorFloor = HSLiftConfiguration.FloorForPanel(parent.y);
             bool parkedHere = behind || (doorFloor != null && HSLiftConfiguration.Data.CurrentY == doorFloor.Y && !HSLiftController.IsMoving);
+            HSLiftDebug.Info("Door " + _commandName + " at " + parent + " parkedHere=" + parkedHere + " behind=" + behind);
 
+            var world = GameManager.Instance != null ? GameManager.Instance.World : null;
             if (close)
             {
-                // Vehicle: one garage per landing — vanilla close only. Ped: cabin + landing close together.
-                if (parkedHere && !vehicle) __state = PairClose;
+                if (parkedHere && !vehicle)
+                {
+                    if (world != null) HSLiftDoors.CloseAtCar(world);
+                    if (HSLiftNet.IsRemoteClient)
+                    {
+                        var id = HSLiftConfiguration.Data != null ? HSLiftConfiguration.Data.ElevatorId : "";
+                        HSLiftNet.SendDoors(id, false);
+                    }
+                    else HSLiftController.OnLiftDoorClosed(_player);
+                    __result = true;
+                    return false;
+                }
                 return true;
             }
             if (parkedHere)
             {
-                var world = GameManager.Instance != null ? GameManager.Instance.World : null;
                 if (world != null && HSLiftDoors.IsCarDoor(world, parent) && !HSLiftDoors.HasLandingOutside(world, parent))
                 {
                     if (_player != null)
@@ -73,7 +85,17 @@ public static class HSLiftDoorPatch
                     __result = false;
                     return false;
                 }
-                __state = PairOpen;
+                if (!vehicle)
+                {
+                    if (world != null) HSLiftDoors.OpenAtCar(world);
+                    if (HSLiftNet.IsRemoteClient)
+                    {
+                        var id = HSLiftConfiguration.Data != null ? HSLiftConfiguration.Data.ElevatorId : "";
+                        HSLiftNet.SendDoors(id, true);
+                    }
+                    __result = true;
+                    return false;
+                }
                 return true;
             }
 
@@ -101,32 +123,6 @@ public static class HSLiftDoorPatch
         }
     }
 
-    // The other doors of the set (cabin + landing at this floor) follow the one the player used.
-    static void Postfix(EntityPlayerLocal _player, int __state)
-    {
-        if (__state == NoPair) return;
-        try
-        {
-            if (HSLiftNet.IsRemoteClient)
-            {
-                var id = HSLiftConfiguration.Data != null ? HSLiftConfiguration.Data.ElevatorId : "";
-                HSLiftNet.SendDoors(id, __state == PairOpen);
-                return;
-            }
-            var world = GameManager.Instance.World;
-            if (__state == PairOpen)
-            {
-                HSLiftDoors.OpenAtCar(world);
-                return;
-            }
-            HSLiftDoors.CloseAtCar(world);
-            HSLiftController.OnLiftDoorClosed(_player);
-        }
-        catch (Exception e)
-        {
-            HSLiftDebug.Error("Door close handling failed", e);
-        }
-    }
 }
 
 // Standing in the parked car (no inside panel), the lift door's hold-E menu also lists the floors.
@@ -157,8 +153,7 @@ public static class HSLiftDoorMenuPatch
             var player = _entityFocusing as EntityPlayerLocal;
             if (!HSLiftController.IsMoving && d.HasCar && d.Floors.Count > 1
                 && HSLiftController.PlayerInCar(player)
-                && HSLiftDoors.CarIsBehind(parent, parentBv)
-                && !HSLiftCar.HasInsidePanel(GameManager.Instance.World, d.CurrentY))
+                && HSLiftDoors.CarIsBehind(parent, parentBv))
                 list.AddRange(HSLiftFloorMenu.Commands(d));
 
             __result = list.ToArray();

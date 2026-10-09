@@ -48,26 +48,28 @@ public static class HSLiftNet
         }
     }
 
+    static Type pkgType;
+
     public static void RegisterPackage()
     {
         try
         {
-            var t = typeof(NetPackageHSLift);
+            var t = HSGameVersion.Is33
+                ? HSGameApi.NetPackageType33("NetPackageHSLift", typeof(NetPackageHSLiftCore))
+                : HSGameApi.NetPackageType32("NetPackageHSLift", typeof(NetPackageHSLiftCore));
+            pkgType = t;
             var f = typeof(NetPackageManager).GetField("knownPackageTypes", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
             if (f == null) return;
             var dict = f.GetValue(null) as IDictionary;
             if (dict == null) return;
             var args = f.FieldType.GetGenericArguments();
             if (args != null && args.Length >= 1 && args[0] == typeof(string))
-            {
-                if (!dict.Contains(t.Name)) dict[t.Name] = t;
-            }
+                dict[t.Name] = t;
             else if (args != null && args.Length >= 1 && args[0] == typeof(Type))
-            {
-                if (!dict.Contains(t)) dict[t] = t.Name;
-            }
-            else if (!dict.Contains(t.Name)) dict[t.Name] = t;
-            HSLiftDebug.Verbose("Registered NetPackageHSLift");
+                dict[t] = t.Name;
+            else
+                dict[t.Name] = t;
+            HSLiftDebug.Info("Registered " + t.Name + " (" + (HSGameVersion.Is33 ? "3.3 emit" : "3.2 emit") + ")");
         }
         catch (Exception e)
         {
@@ -75,9 +77,10 @@ public static class HSLiftNet
         }
     }
 
-    static NetPackageHSLift Pkg()
+    static NetPackageHSLiftCore Pkg()
     {
-        return NetPackageManager.GetPackage<NetPackageHSLift>();
+        if (pkgType == null) RegisterPackage();
+        return (NetPackageHSLiftCore)HSGameApi.GetNetPackage(pkgType);
     }
 
     static void ToServer(NetPackage pkg)
@@ -120,11 +123,13 @@ public static class HSLiftNet
 
     public static void SendUseInside(Vector3i pos, int floorIndex)
     {
+        HSLiftDebug.Info("Send UseInside floor " + floorIndex + " at " + pos);
         ToServer(Pkg().SetupCmd(UseInside, "", "", "", "", floorIndex, 0, true, pos, false, null, 0f));
     }
 
     public static void SendUseFloor(string liftId, int targetY, int floorIndex)
     {
+        HSLiftDebug.Info("Send UseFloor " + liftId + " floor " + floorIndex + " Y" + targetY);
         ToServer(Pkg().SetupCmd(UseFloor, "", "", "", liftId ?? "", floorIndex, targetY, false, Vector3i.zero, false, null, 0f));
     }
 
@@ -243,24 +248,24 @@ public static class HSLiftNet
     }
 }
 
-public class NetPackageHSLift : NetPackage
+public abstract class NetPackageHSLiftCore : NetPackage
 {
-    byte kind;
-    string text;
-    string arg;
-    string extra;
-    string liftId;
-    int floorIndex;
-    int targetY;
-    bool hasPos;
-    Vector3i pos;
-    bool flag;
-    float curY;
-    List<HSLiftCell> cells;
+    protected byte kind;
+    protected string text;
+    protected string arg;
+    protected string extra;
+    protected string liftId;
+    protected int floorIndex;
+    protected int targetY;
+    protected bool hasPos;
+    protected Vector3i pos;
+    protected bool flag;
+    protected float curY;
+    protected List<HSLiftCell> cells;
 
     public override NetPackageDirection PackageDirection { get { return NetPackageDirection.Both; } }
 
-    public NetPackageHSLift SetupCmd(byte k, string t, string a, string e, string id, int floor, int y, bool has, Vector3i p, bool f, List<HSLiftCell> c, float cy)
+    public NetPackageHSLiftCore SetupCmd(byte k, string t, string a, string e, string id, int floor, int y, bool has, Vector3i p, bool f, List<HSLiftCell> c, float cy)
     {
         kind = k;
         text = t ?? "";
@@ -377,6 +382,7 @@ public class NetPackageHSLift : NetPackage
                     break;
                 case HSLiftNet.UseInside:
                     if (!HSLiftNet.IsAuthority) return;
+                    HSLiftDebug.Info("Got UseInside floor " + floorIndex + " at " + pos);
                     HSLiftNet.ReplyTip(Sender, HSLiftNet.NotReady(HSLiftController.RequestFromInsidePanel(pos, floorIndex)));
                     break;
                 case HSLiftNet.UseDoor:
@@ -424,12 +430,6 @@ public class NetPackageHSLift : NetPackage
         }
     }
 
-    public override int GetLength()
-    {
-        int n = 64 + (text != null ? text.Length : 0) + (liftId != null ? liftId.Length : 0);
-        if (cells != null) n += cells.Count * 48;
-        return n;
-    }
 }
 
 [HarmonyPatch(typeof(NetPackageManager), "SetupBaseMapping")]

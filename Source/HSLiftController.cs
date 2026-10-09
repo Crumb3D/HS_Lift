@@ -10,6 +10,13 @@ public class HSLiftController : MonoBehaviour
     public HSLiftConfigData Bound;
     public HSLiftState LiftState = HSLiftState.Idle;
     public bool IsThisMoving { get { return LiftState != HSLiftState.Idle; } }
+    public bool IsTraveling
+    {
+        get
+        {
+            return LiftState == HSLiftState.MovingUp || LiftState == HSLiftState.MovingDown || LiftState == HSLiftState.Stopping;
+        }
+    }
 
     static readonly List<HSLiftController> all = new List<HSLiftController>();
     static bool soundsStarted;
@@ -54,7 +61,11 @@ public class HSLiftController : MonoBehaviour
     {
         if (d == null) return null;
         var c = Of(d);
-        if (c != null) { c.Bound = d; return c; }
+        if (c != null)
+        {
+            c.Bound = d;
+            return c;
+        }
         var go = new GameObject("HSLift_" + d.ElevatorId);
         DontDestroyOnLoad(go);
         c = go.AddComponent<HSLiftController>();
@@ -91,6 +102,7 @@ public class HSLiftController : MonoBehaviour
 
     GameObject releasing;
     float releaseAt;
+    public bool HoldingClone { get { return releasing != null; } }
 
     GameObject preview;
     float previewUntil;
@@ -129,13 +141,13 @@ public class HSLiftController : MonoBehaviour
         var world = GameManager.Instance != null ? GameManager.Instance.World : null;
         if (world == null) return;
         string why;
-        if (HSLiftDoors.PersonInDoorway(world, out why) || HSLiftDoors.DoorwayBlocked(world, out why))
+        if (HSLiftDoors.PersonInDoorway(world, out why) || (LiftState != HSLiftState.Closing && HSLiftDoors.DoorwayBlocked(world, out why)))
         {
             bool idle = LiftState == HSLiftState.Idle;
             HSLiftDoors.OpenAtCar(world, idle);
             if (LiftState == HSLiftState.Closing) doorsToldToClose = false;
             WarnDoorBlocked(world, why);
-            HSLiftDebug.Verbose("Reopened doors (obstruction): " + why);
+            HSLiftDebug.Info("Reopened doors (obstruction): " + why);
             return;
         }
         if (!HSLiftDoors.AnyOpenAtCar(world) && !HSLiftDoors.PersonInDoorway(world, out why))
@@ -168,7 +180,16 @@ public class HSLiftController : MonoBehaviour
     {
         if (Time.unscaledTime < nextDoorBlockedWarn) return;
         nextDoorBlockedWarn = Time.unscaledTime + 8f;
-        if (!string.IsNullOrEmpty(why)) HSLiftDebug.Verbose("Doors blocked: " + why);
+        if (!string.IsNullOrEmpty(why)) HSLiftDebug.Info("Doors blocked: " + why);
+    }
+
+    void StayPutAfterFailedClose(World world)
+    {
+        LiftState = HSLiftState.Idle;
+        doorsToldToClose = false;
+        if (world != null) HSLiftDoors.OpenAtCar(world, false);
+        HSLiftDebug.Info("Did not leave: doors did not shut");
+        HSLiftNet.TellLocal(Localization.Get("hsliftDidNotLeave"));
     }
 
     // --- requests (outside panels, inside panels, console all end up in RequestMoveTo) ---
@@ -312,10 +333,17 @@ public class HSLiftController : MonoBehaviour
                 HSLiftNet.SendUseFloor(D.ElevatorId, targetY, -1);
                 return null;
             }
-            if (IsMoving)
+            if (instance.IsTraveling)
             {
-                HSLiftDebug.Verbose("Ignored " + source + " request: lift is " + State);
+                HSLiftDebug.Info("Ignored " + source + " request: lift is " + instance.LiftState);
                 return "lift is moving";
+            }
+            if (instance.LiftState == HSLiftState.Closing)
+            {
+                instance.pendingTarget = targetY;
+                instance.pendingSource = source;
+                HSLiftDebug.Info("Already closing; new floor Y" + targetY + " (" + source + ")");
+                return null;
             }
             if (instance.recovering) return "restoring the car from an interrupted move";
             if (!D.HasCar) return "car not set (hslift corner1 / corner2)";
@@ -331,12 +359,12 @@ public class HSLiftController : MonoBehaviour
                 return "already at " + HSLiftConfiguration.FloorLabel(targetY);
             }
 
-            // Wait until the doorway is clear, then shut the doors; the car leaves after they finish closing.
             instance.pendingTarget = targetY;
             instance.pendingSource = source;
             instance.doorsToldToClose = false;
+            instance.closingSince = Time.time;
             instance.LiftState = HSLiftState.Closing;
-            HSLiftDebug.Verbose("Waiting to close doors before leaving for " + HSLiftConfiguration.FloorLabel(targetY) + " (" + source + ")");
+            HSLiftDebug.Info("Closing doors, then Y" + D.CurrentY + " -> Y" + targetY + " (" + source + ")");
             return null;
         }
         catch (Exception e)
@@ -378,9 +406,11 @@ public class HSLiftController : MonoBehaviour
     }
 
     static float DoorCloseDelay { get { return HSLiftConfiguration.IsVehicle ? 2.75f : 1.5f; } }
+    const float ClosingGiveUp = 6f;
     int pendingTarget;
     string pendingSource;
     float departAt;
+    float closingSince;
     bool doorsToldToClose;
 
     void FinishClosing()
@@ -388,11 +418,16 @@ public class HSLiftController : MonoBehaviour
         Push();
         var world = GameManager.Instance.World;
         string why;
-        if (HSLiftDoors.PersonInDoorway(world, out why) || (HSLiftDoors.AnyOpenAtCar(world) && HSLiftDoors.DoorwayBlocked(world, out why)))
+        if (HSLiftDoors.PersonInDoorway(world, out why))
         {
             HSLiftDoors.OpenAtCar(world, false);
             doorsToldToClose = false;
             WarnDoorBlocked(world, why);
+            return;
+        }
+        if (HSLiftDoors.AnyOpenAtCar(world))
+        {
+            doorsToldToClose = false;
             return;
         }
         List<HSLiftCell> captured;
@@ -469,34 +504,32 @@ public class HSLiftController : MonoBehaviour
             if (LiftState == HSLiftState.Closing)
             {
                 var world = GameManager.Instance.World;
+                string why;
+                if (Time.time >= closingSince + ClosingGiveUp)
+                {
+                    if (!HSLiftDoors.PersonInDoorway(world, out why) && !HSLiftDoors.AnyOpenAtCar(world))
+                        FinishClosing();
+                    else
+                        StayPutAfterFailedClose(world);
+                    return;
+                }
                 if (!doorsToldToClose)
                 {
-                    string why;
-                    if (HSLiftDoors.DoorwayBlocked(world, out why))
-                    {
-                        WarnDoorBlocked(world, why);
-                        return;
-                    }
                     bool anyOpen = HSLiftDoors.AnyOpenAtCar(world);
-                    HSLiftDoors.CloseAllShaftDoors(world);
+                    HSLiftDoors.CloseAllShaftDoors(world, false);
                     doorsToldToClose = true;
                     departAt = anyOpen ? Time.time + DoorCloseDelay : Time.time;
-                    HSLiftDebug.Verbose((anyOpen ? "Closing doors" : "Doors already shut") + " before leaving for " + HSLiftConfiguration.FloorLabel(pendingTarget));
+                    HSLiftDebug.Info((anyOpen ? "Closing doors" : "Doors already shut") + " before leaving for " + HSLiftConfiguration.FloorLabel(pendingTarget));
                     return;
                 }
-                if (doorsToldToClose)
+                if (HSLiftDoors.PersonInDoorway(world, out why))
                 {
-                    string blockedWhy;
-                    if (HSLiftDoors.PersonInDoorway(world, out blockedWhy) || HSLiftDoors.DoorwayBlocked(world, out blockedWhy))
-                    {
-                        HSLiftDoors.OpenAtCar(world, false);
-                        doorsToldToClose = false;
-                        WarnDoorBlocked(world, blockedWhy);
-                        return;
-                    }
-                    if (Time.time >= departAt) FinishClosing();
+                    HSLiftDoors.OpenAtCar(world, false);
+                    doorsToldToClose = false;
+                    WarnDoorBlocked(world, why);
                     return;
                 }
+                if (Time.time >= departAt) FinishClosing();
                 return;
             }
             if (LiftState == HSLiftState.Idle || LiftState == HSLiftState.Error)
@@ -598,6 +631,8 @@ public class HSLiftController : MonoBehaviour
         try
         {
             Push();
+            if (Bound != null && Bound.HasCar)
+                HSLiftCabinLights.Tick(Bound, LiftState == HSLiftState.Idle);
             if (releasing != null && Time.time >= releaseAt) FinishRelease();
             if (!HSLiftNet.IsAuthority)
             {
@@ -759,7 +794,11 @@ public class HSLiftController : MonoBehaviour
         {
             if (customLoop != null) { customLoop.Stop(); Destroy(customLoop); }
             customLoop = null;
-            if (cabinMusic != null) { cabinMusic.Stop(); Destroy(cabinMusic); }
+            if (cabinMusic != null)
+            {
+                cabinMusic.Stop();
+                UnityEngine.Object.Destroy(cabinMusic.gameObject);
+            }
             cabinMusic = null;
             if (loopPlaying == null) return;
             var player = GameManager.Instance.World.GetPrimaryPlayer();

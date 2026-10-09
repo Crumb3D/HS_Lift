@@ -50,20 +50,20 @@ public static class HSLiftSetup
                 if (err != null) return err;
                 return HSLiftConfiguration.SelectNearest(p);
             }
-            case "autopaint":
-            case "paint":
-            {
-                bool on;
-                if (!HSLiftSettings.TryParseOnOff(arg, out on))
-                    return "Usage: hslift autopaint on | off   (host / single player). Now: AutoPaintInterior=" + HSLiftSettings.AutoPaintInterior;
-                return HSLiftSettings.SetAutoPaint(on);
-            }
             case "music":
             {
                 bool on;
                 if (!HSLiftSettings.TryParseOnOff(arg, out on))
                     return "Usage: hslift music on | off   (host / single player). Now: Music=" + HSLiftSettings.Music;
                 return HSLiftSettings.SetMusic(on);
+            }
+            case "flicker":
+            case "flickerlights":
+            {
+                bool on;
+                if (!HSLiftSettings.TryParseOnOff(arg, out on))
+                    return "Usage: hslift flicker on | off   (host / single player). Now: FlickerLights=" + HSLiftSettings.FlickerLights;
+                return HSLiftSettings.SetFlickerLights(on);
             }
             case "scheme":
             case "numbering":
@@ -241,6 +241,12 @@ public static class HSLiftSetup
                 if (HSLiftConfiguration.FloorByName(name) != null) return "Floor '" + name + "' already exists. Remove it first.";
                 var same = HSLiftConfiguration.FloorAt(p.y);
                 if (same != null) return HSLiftConfiguration.FloorDisplayName(same.Name) + " is already at this height.";
+                // Two stops closer than the car is tall cannot both be landings: almost always a slab one block off.
+                int minGap = Math.Max(2, d.DoorHeight - 1);
+                var near = d.Floors.Find(f => Math.Abs(f.Y - p.y) < minGap);
+                if (near != null)
+                    return "Too close to " + HSLiftConfiguration.FloorDisplayName(near.Name) + " (Y" + near.Y + ", you aimed at Y" + p.y
+                        + "). Floors must be at least " + minGap + " blocks apart. Aim at the landing floor slab itself.";
                 d.Floors.Add(new HSLiftFloor { Name = name, Y = p.y });
                 RelabelIfStopBelowGround();
                 HSLiftConfiguration.SyncFloors();
@@ -463,10 +469,14 @@ public static class HSLiftSetup
         if (!FindPanelNear(world, p, out found))
             return "No Elevator Outside Button Panel at or next to the aimed block (aimed: " + aimedBv.Block.GetBlockName() + " at " + p + "). Inside panels ride with the car and are not registered.";
         p = found;
+        if (!d.HasCar || d.DistOutsideXZ(p.x, p.z) > HSLiftConfiguration.NearLiftBlocks)
+            return "Panel at " + p + " is not beside " + d.ElevatorId + "'s shaft" + (d.HasCar ? " (car at X" + d.MinX + " Z" + d.MinZ + ")" : " (no car set yet)")
+                + ". Set this lift's car corners first, or stand at the right lift.";
         var floor = HSLiftConfiguration.FloorForPanel(p.y);
         if (floor == null) return "Panel at " + p + " is not beside a floor. Add the floor first. Floors: " + HSLiftConfiguration.FloorList();
         d.Panels.RemoveAll(e => e.X == p.x && e.Y == p.y && e.Z == p.z);
         d.Panels.Add(new HSLiftPanelEntry { Stop = floor.Name, X = p.x, Y = p.y, Z = p.z });
+        HSLiftConfiguration.ForgetPanelOnOtherLifts(d, p);
         HSLiftConfiguration.SyncFloors();
         HSLiftConfiguration.Save();
         return "Panel registered for " + HSLiftConfiguration.FloorDisplayName(floor.Name) + ". Wired to power: " + HSLiftPower.IsPanelPowered(p)

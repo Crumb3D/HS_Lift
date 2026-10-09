@@ -142,15 +142,32 @@ public static class HSLiftSounds
         }
     }
 
-    static AudioSource MakeMusicSource(GameObject go, AudioClip clip)
+    static AudioSource MakeMusicSource(GameObject carRoot, AudioClip clip)
     {
-        var src = go.AddComponent<AudioSource>();
+        var hold = new GameObject("HSLiftCabinMusic");
+        hold.transform.SetParent(carRoot.transform, false);
+        float y = D.SizeY <= 1 ? 0.55f : Mathf.Clamp(D.SizeY * 0.45f, 0.7f, D.SizeY - 0.3f);
+        hold.transform.localPosition = new Vector3(D.SizeX * 0.5f, y, D.SizeZ * 0.5f);
+        var src = hold.AddComponent<AudioSource>();
         src.clip = clip;
         src.loop = true;
         src.playOnAwake = false;
-        src.spatialBlend = 0f;
+        src.spatialBlend = 1f;
+        src.spatialize = true;
         src.dopplerLevel = 0f;
-        src.volume = 0.3f;
+        src.spread = 70f;
+        src.rolloffMode = AudioRolloffMode.Linear;
+        src.minDistance = 0.7f;
+        src.maxDistance = 7f;
+        src.priority = 64;
+        src.volume = 0.16f;
+        var lp = hold.AddComponent<AudioLowPassFilter>();
+        lp.cutoffFrequency = 900f;
+        var ride = hold.AddComponent<HSLiftCabinMusicRide>();
+        ride.Src = src;
+        ride.Lp = lp;
+        ride.Car = carRoot.transform;
+        ride.CabinSize = new Vector3(Mathf.Max(1, D.SizeX), Mathf.Max(1, D.SizeY), Mathf.Max(1, D.SizeZ));
         return src;
     }
 
@@ -183,5 +200,46 @@ public static class HSLiftSounds
         MakeSource(go, Ding, false).Play();
         UnityEngine.Object.Destroy(go, Ding.length + 0.2f);
         return true;
+    }
+}
+
+// Speaker in the moving cabin. Quiet inside; muffled and quieter outside a closed car.
+public class HSLiftCabinMusicRide : MonoBehaviour
+{
+    public AudioSource Src;
+    public AudioLowPassFilter Lp;
+    public Transform Car;
+    public Vector3 CabinSize;
+
+    void LateUpdate()
+    {
+        if (Src == null || Car == null) return;
+        bool inside = LocalPlayerInCabin();
+        if (inside)
+        {
+            Src.volume = 0.14f;
+            if (Lp != null) Lp.cutoffFrequency = 5200f;
+        }
+        else
+        {
+            Src.volume = 0.045f;
+            if (Lp != null) Lp.cutoffFrequency = 550f;
+        }
+    }
+
+    bool LocalPlayerInCabin()
+    {
+        try
+        {
+            var world = GameManager.Instance != null ? GameManager.Instance.World : null;
+            var p = world != null ? world.GetPrimaryPlayer() : null;
+            if (p == null) return false;
+            var lp = Car.InverseTransformPoint(p.position);
+            const float pad = 0.15f;
+            return lp.x >= pad && lp.x <= CabinSize.x - pad
+                && lp.y >= -0.25f && lp.y <= CabinSize.y + 0.4f
+                && lp.z >= pad && lp.z <= CabinSize.z - pad;
+        }
+        catch { return false; }
     }
 }

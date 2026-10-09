@@ -139,7 +139,7 @@ public static class HSLiftDoors
                 HSLiftDebug.Error("Door " + (open ? "open" : "close") + " failed at " + pos, e);
             }
         }
-        if (changed > 0) HSLiftDebug.Verbose((open ? "Opened/shut " : "Closed ") + changed + " lift door(s) for rows Y" + yLo + "-" + yHi);
+        HSLiftDebug.Info((open ? "Opened/shut " : "Closed ") + changed + " lift door(s) for rows Y" + yLo + "-" + yHi);
         return changed;
     }
 

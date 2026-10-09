@@ -30,8 +30,8 @@ public class ConsoleCmdHSLift : ConsoleCmdAbstract
             "hslift floor remove <name>    - forget a floor\n" +
             "hslift floor list             - show floors\n" +
             "hslift scheme gb | us         - floor labels (also FloorScheme in the world-save HSLift.json: gb or us). GB default: G, 1, 2. US: G becomes 1\n" +
-            "hslift autopaint on | off     - host: auto-paint cabin on move (every client). Paintbrush still works. Single player uses your local JSON if there is no server\n" +
             "hslift music on | off         - host: cabin MP3s on/off for every client. Empty assets/music is silent\n" +
+            "hslift flicker on | off       - host: cabin bulb flicker (JSON FlickerLights, default on)\n" +
             "hslift panel                  - register the aimed outside button panel (floor found from its height)\n" +
             "hslift panel clear            - forget all registered panels\n" +
             "hslift go <floor>             - send the car to a floor\n" +

@@ -122,8 +122,8 @@ public class HSLiftFile
     public bool Debug;
     // gb (default): G, 1, 2. us: G shows as 1, 1 as 2. Edit this; restart the game. No rebuild.
     public string FloorScheme = "gb";
-    public bool? AutoPaintInterior;
     public bool? Music;
+    public bool? FlickerLights;
     public List<HSLiftConfigData> Lifts = new List<HSLiftConfigData>();
 }
 
@@ -204,8 +204,8 @@ public static class HSLiftConfiguration
             ActiveId = ActiveId,
             Debug = HSLiftDebug.Enabled,
             FloorScheme = FileFloorScheme,
-            AutoPaintInterior = HSLiftSettings.AutoPaintInterior,
             Music = HSLiftSettings.Music,
+            FlickerLights = HSLiftSettings.FlickerLights,
             Lifts = Lifts
         };
     }
@@ -223,8 +223,8 @@ public static class HSLiftConfiguration
             var settings = new JsonSerializerSettings { ObjectCreationHandling = ObjectCreationHandling.Replace };
             var file = JsonConvert.DeserializeObject<HSLiftFile>(json, settings) ?? new HSLiftFile();
             HSLiftSettings.ApplyFromServer(
-                file.AutoPaintInterior.HasValue ? file.AutoPaintInterior.Value : true,
-                file.Music.HasValue ? file.Music.Value : true);
+                file.Music.HasValue ? file.Music.Value : true,
+                file.FlickerLights.HasValue ? file.FlickerLights.Value : true);
             Lifts = file.Lifts != null ? file.Lifts : new List<HSLiftConfigData>();
             ActiveId = file.ActiveId;
             FileFloorScheme = NormalizeFloorScheme(string.IsNullOrEmpty(file.FloorScheme) ? "gb" : file.FloorScheme);
@@ -294,6 +294,7 @@ public static class HSLiftConfiguration
         if (Lifts.Count == 0) Lifts.Add(new HSLiftConfigData());
         FileFloorScheme = NormalizeFloorScheme(string.IsNullOrEmpty(FileFloorScheme) ? ResolveFloorScheme(null, Lifts) : FileFloorScheme);
         foreach (var d in Lifts) Normalize(d);
+        DedupePanels();
         var active = ById(ActiveId) ?? Lifts[0];
         Use(active);
         HSLiftDebug.Enabled = Data.Debug;
@@ -414,12 +415,45 @@ public static class HSLiftConfiguration
 
     // Registered outside panel, or the lift whose 2-block outside ring contains this cell.
     // Only a panel that was registered to a lift belongs to it. Nearby unregistered panels stay unlinked.
+    // Registered to more than one lift (older saves): the one whose shaft it is beside wins.
     public static HSLiftConfigData RegisteredPanelOwner(Vector3i pos)
     {
+        HSLiftConfigData best = null;
+        int bestD = int.MaxValue;
         foreach (var d in Lifts)
-            if (d.Panels != null && d.Panels.Exists(p => p.X == pos.x && p.Y == pos.y && p.Z == pos.z))
-                return d;
-        return null;
+        {
+            if (d.Panels == null || !d.Panels.Exists(p => p.X == pos.x && p.Y == pos.y && p.Z == pos.z)) continue;
+            int dist = d.DistOutsideXZ(pos.x, pos.z);
+            if (best == null || dist < bestD) { best = d; bestD = dist; }
+        }
+        return best;
+    }
+
+    // Keep each panel position on one lift only, so pressing it never checks another shaft's panels.
+    static void DedupePanels()
+    {
+        foreach (var d in Lifts)
+        {
+            if (d.Panels == null) continue;
+            foreach (var p in d.Panels.ToArray())
+            {
+                var pos = p.Pos;
+                var owner = RegisteredPanelOwner(pos);
+                if (owner == null || owner == d) continue;
+                d.Panels.RemoveAll(e => e.X == pos.x && e.Y == pos.y && e.Z == pos.z);
+                HSLiftDebug.Info("Panel at " + pos + " was registered to " + d.ElevatorId + " and " + owner.ElevatorId + "; kept on " + owner.ElevatorId + " (its shaft is beside it).");
+            }
+        }
+    }
+
+    public static void ForgetPanelOnOtherLifts(HSLiftConfigData keep, Vector3i pos)
+    {
+        foreach (var d in Lifts)
+        {
+            if (d == keep || d.Panels == null) continue;
+            if (d.Panels.RemoveAll(e => e.X == pos.x && e.Y == pos.y && e.Z == pos.z) > 0)
+                HSLiftDebug.Info("Panel at " + pos + " moved from " + d.ElevatorId + " to " + keep.ElevatorId);
+        }
     }
 
     public static HSLiftConfigData LiftForOutsidePanel(Vector3i pos)
@@ -490,6 +524,8 @@ public static class HSLiftConfiguration
         return LiftForInsidePanel(pos) ?? LiftForDoor(pos) ?? LiftForOutsidePanel(pos);
     }
 
+    public const int NearLiftBlocks = 8;
+
     public static HSLiftConfigData LiftNearXZ(Vector3i pos)
     {
         HSLiftConfigData best = null;
@@ -498,6 +534,7 @@ public static class HSLiftConfiguration
         {
             if (!d.HasCar) continue;
             int dist = d.DistOutsideXZ(pos.x, pos.z);
+            if (dist > NearLiftBlocks) continue;
             if (dist < bestD) { bestD = dist; best = d; }
         }
         return best;
@@ -635,6 +672,17 @@ public static class HSLiftConfiguration
             }
         }
         return n[0].ToString();
+    }
+
+    // Full short label for writable signs and menu icons (G, B2, 10; US scheme shifts numbers up one).
+    public static string FloorSignText(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "";
+        var n = name.Trim();
+        if (IsGroundName(n)) return IsUsFloorScheme() ? "1" : "G";
+        int num;
+        if (IsUsFloorScheme() && int.TryParse(n, out num) && num >= 0) return (num + 1).ToString();
+        return n.ToUpperInvariant();
     }
 
     // Menu and tooltips. Console still uses the short stored name (G, 1, B1).

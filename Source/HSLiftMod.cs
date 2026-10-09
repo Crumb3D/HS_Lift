@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Reflection;
 using HarmonyLib;
@@ -10,6 +10,8 @@ public class HSLiftMod : IModApi
 
     public void InitMod(Mod _modInstance)
     {
+        if (!HSGameVersion.AllowLoad("[HSLift]"))
+            return;
         ModPath = _modInstance.Path;
         try
         {
@@ -21,7 +23,7 @@ public class HSLiftMod : IModApi
         {
             HSLiftDebug.Error("Could not move lift save out of the mod folder", e);
         }
-        HSLiftDebug.Info("Init v1.0.3 - server sync; setup tool hold E; admin: hslift");
+        HSLiftDebug.Info("Init v1.0.17 - Floor/Lift signs, floor spacing check; admin: hslift");
         HSLiftNet.RegisterPackage();
         ModEvents.GameStartDone.RegisterHandler(OnGameStartDone);
         ModEvents.WorldShuttingDown.RegisterHandler(OnWorldShuttingDown);

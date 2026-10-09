@@ -44,6 +44,11 @@ public static class HSLiftPower
         bool anyPowered = false;
         foreach (var p in d.Panels)
         {
+            if (world != null && world.GetChunkFromWorldPos(p.Pos) == null)
+            {
+                problem = "floor " + p.Stop + " panel at " + p.Pos + " is too far away to check (not loaded)";
+                return false;
+            }
             if (world == null || !(world.GetBlock(p.Pos).Block is BlockHSLiftOutsidePanel))
             {
                 problem = "floor " + p.Stop + " panel at " + p.Pos + " is missing (re-register or: hslift panel clear)";
@@ -60,10 +65,49 @@ public static class HSLiftPower
         }
         if (!anyPowered)
         {
-            problem = "no power: wire a generator or battery bank to any outside panel on this lift";
+            var parts = new System.Collections.Generic.List<string>();
+            foreach (var p in d.Panels) parts.Add(p.Stop + " " + WireState(world, p.Pos));
+            problem = "no power: wire a generator or battery bank to any outside panel on this lift (" + string.Join("; ", parts.ToArray()) + ")";
             return false;
         }
         problem = null;
         return true;
+    }
+
+    // What the panel is wired to, walking up to the generator / battery bank / solar bank.
+    static string WireState(World world, Vector3i pos)
+    {
+        try
+        {
+            var te = world.GetTileEntity(pos) as TileEntityPowered;
+            if (te == null) return "panel has no power data";
+            if (!te.HasParent()) return "panel not wired";
+            PowerItem item = te.GetPowerItem();
+            if (item == null && PowerManager.HasInstance) item = PowerManager.Instance.GetPowerItemByWorldPos(pos);
+            var up = item != null ? item.Parent : null;
+            for (int guard = 0; up != null && !(up is PowerSource) && up.Parent != null && guard < 32; guard++)
+                up = up.Parent;
+            var src = up as PowerSource;
+            if (src == null) return "wired to " + te.GetParent() + ", no power source behind it";
+            var name = world.GetBlock(src.Position).Block.GetLocalizedBlockName();
+            if (!src.IsOn) return "wired to " + name + " at " + src.Position + ", which is switched OFF";
+            return "wired to " + name + " at " + src.Position + ", on, giving " + src.CurrentPower + "W";
+        }
+        catch (Exception e)
+        {
+            return "power check failed: " + e.Message;
+        }
+    }
+
+    // Lights in this cabin: any registered outside panel on this lift is wired.
+    public static bool CabinHasPower(HSLiftConfigData d)
+    {
+        if (d == null || d.Panels == null) return false;
+        for (int i = 0; i < d.Panels.Count; i++)
+        {
+            if (d.Panels[i] == null) continue;
+            if (IsPanelPowered(d.Panels[i].Pos)) return true;
+        }
+        return false;
     }
 }

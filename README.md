@@ -2,7 +2,7 @@
 
 Build your own passenger or vehicle elevators in **7 Days to Die**. You build the cabin or garage pad from vanilla blocks. HS Lift **moves** that structure — it does not spawn a premade car, and it will not chew through blocks in the shaft.
 
-**Version 1.0.3** — tested on **7 Days to Die 3.2**. Not claimed for 1.0, 2.0, or 3.3 Experimental.
+**Version 1.0.12** — dual-load **7 Days to Die 3.2 and 3.3**. Cabin paints follow the opaque atlas depth (3.2: 508–510; 3.3: last three slices).
 
 License: [MIT](LICENSE). Author: Crumb.
 
@@ -39,7 +39,7 @@ Vanilla elevator doors and panels are decoration. HS Lift turns a cabin or vehic
 - Setup tool marks two **opposite outside corners**. Ground floor **G** is created when both are set.
 - Add more landings with **Add Floor**.
 - Register an **outside** button on each floor. Wire **one** of those to a generator or battery — that powers the whole lift.
-- The **inside** panel rides with the car. No wires. **Hold E** and pick a floor (a tap does nothing).
+- The **inside** panel rides with the car. No wires. **Hold E** and pick a floor button (G, B1, 10 ...). With 3+ floors a tap only opens the doors; with 2 floors a tap goes to the other floor.
 - Cabin door and landing door on the same opening open and close together.
 - A locked outside door **calls** the car.
 - Cabin doors stay shut if there is no walkable floor outside that side (a drop or a wall).
@@ -100,7 +100,8 @@ Admin: `hslift status` lists what is still missing.
 | **Plate Corner**, **Door Trim 1m**, **Door Trim Corner** | Ride; sweep through landing blocks while moving |
 | Doorway slab between car and exit | Stays (excluded). Any block. |
 | **Sheets**, **Plate Double**, other door trim, **round ladders** | Ride if they are **inside** the car box. Same shapes on the landing stay and the car passes them |
-| Vanilla wall **letters / numbers** | Ride if they are **inside** the car. Landing signs stay and update to the car’s floor |
+| Vanilla wall **letters / numbers** | Ride if they are **inside** the car. Landing signs stay and update to the car’s floor (first character only: B2 shows B, 10 shows 1) |
+| Vanilla **Wood Sign** (1x1, 1x3, 2x5) by a landing door | Write a floor label on it (G, B2, 10 ...). It then reads **Floor: 3** (this landing) and **Lift: 6** (where the car is) and keeps up as the car moves. Signs with any other text are left alone |
 | Cabin elevator door | Rides |
 | Landing elevator / garage door | Stays |
 | Inside panel | Rides |
@@ -160,7 +161,8 @@ F1 console (admin). `hslift` prints the full list. Common:
 - **Wrong lift edited** — **Use Lift Here** first.
 - **Need two shaft walls** — the cabin has to sit against the building.
 - After a new `HSLift.dll` or XML change, **restart** the game.
-- **Auto-paint / cabin music** — host settings (`hslift autopaint on|off`, `hslift music on|off`, or `HSLiftSettings.json` in the world save). Joining clients follow the host. Single player uses your local file because you are the host. Paintbrush materials stay available either way. MP3s still live in `assets/music` on each machine.
+- **Cabin look** — paint the cabin yourself with the **paintbrush**, Metal group: **Lift Floor**, **Lift Wall**, **Lift Ceiling**. Those paints stay on the blocks parked and moving.
+- **Cabin music** — `hslift music on|off` (host). MP3s live in `assets/music` on each machine.
 
 ---
 
@@ -180,7 +182,9 @@ Open an issue on the GitHub repository with the game version, what you built, an
 
 ## Changelog
 
-**1.0.3** — Vehicle garage wells get the same shaft-lid as passenger lifts. Cabin interior paints (paintbrush + optional auto-paint), host-controlled cabin music (quiet, looping, all clients hear the same track).
+**1.0.11** — Removed AutoPaintInterior from settings and world JSON. Cabin look is paintbrush only.
+
+**1.0.3** — Vehicle garage wells get the same shaft-lid as passenger lifts. Cabin interior paints (paintbrush), host-controlled cabin music (quiet, looping, all clients hear the same track).
 
 **1.0.2** — Dedicated clients no longer get kicked when the lift list arrives (config packet length). If the shaft well has no roof, the mod caps it with concrete half-cubes at the real top of the shaft walls; blocks sitting on that lid move with it.
 
