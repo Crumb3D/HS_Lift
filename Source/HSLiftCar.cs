@@ -1364,23 +1364,46 @@ public static class HSLiftCar
         if (!ShapeBounds(mine, out bm) || !ShapeBounds(theirs, out bt)) return false;
         var want = bm;
         want.Encapsulate(bt);
+        // Plate and 1m trim are flat, so several rotations share one box and the first match lies down like a shelf.
+        // Keep them on the face the two singles already use. The corner is lopsided, so its box picks the rotation.
+        bool lockFace = doubleShape != "doorTrimCornerDouble";
+        int faceA = mine.rotation >> 2, faceB = theirs.rotation >> 2;
+        int spinA = mine.rotation & 3, spinB = theirs.rotation & 3;
         int best = -1;
         float bestErr = float.MaxValue;
+        float bestScore = float.MaxValue;
         for (int r = 0; r < 24; r++)
         {
             v.rotation = (byte)r;
             Bounds bd;
             if (!ShapeBounds(v, out bd)) return false;
             float err = MaxAbs(bd.min - want.min, bd.max - want.max);
-            if (err < bestErr) { bestErr = err; best = r; }
+            float score = err;
+            if (lockFace)
+            {
+                int face = r >> 2, spin = r & 3;
+                bool onA = face == faceA, onB = face == faceB;
+                if (!onA && !onB) score += 5f;
+                else if (spin != (onA ? spinA : spinB)) score += 0.02f;
+            }
+            bool exact = r == mine.rotation || r == theirs.rotation;
+            bool bestExact = best == mine.rotation || best == theirs.rotation;
+            if (score < bestScore - 0.0001f || (Mathf.Abs(score - bestScore) <= 0.0001f && exact && !bestExact))
+            {
+                bestScore = score;
+                bestErr = err;
+                best = r;
+            }
         }
-        if (best < 0 || bestErr > 0.12f)
+        float limit = lockFace ? 0.45f : 0.12f;
+        if (best < 0 || bestErr > limit)
         {
             HSLiftDebug.Verbose("No " + doubleShape + " rotation fits " + a + " rot " + mine.rotation + " + rot " + theirs.rotation + " (best error " + bestErr.ToString("0.00") + ")");
             return false;
         }
         v.rotation = (byte)best;
         dbl = v;
+        HSLiftDebug.Verbose(doubleShape + " rot " + best + " from rot " + mine.rotation + " + rot " + theirs.rotation);
         return true;
     }
 
