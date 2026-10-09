@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
@@ -519,6 +520,8 @@ public static class HSLiftCar
             if (neighbour != null && theirs == null && !SharedPlacedAt(baseY, dx, dy, dz)) continue;
             var bv = world.GetBlock(pos);
             if (bv.isair) continue;
+            // Plate Doubles and sheets on the doorway line are the landing, not the cabin. They stay.
+            if (dy == 0 && IsCarPerimeter(pos.x, pos.z) && IsLandingPlate(bv)) continue;
             var block = bv.Block;
             var name = block.GetBlockName();
             // Vehicle: garage / roll-up doors stay at the landing. Everything else in the box rides.
@@ -772,15 +775,17 @@ public static class HSLiftCar
     }
 
     // Separate RPCs so 7DTD stability sees walls against the shaft before the floor exists.
-    // Snapshot the 1-block ring outside the car and put back anything a cube/door RPC knocked off (lintel plates).
+    // A floor or door RPC also knocks off the landing in front of the doors (the shelf and its Plate Doubles,
+    // two blocks outside the car). Snapshot those and put back anything that was cleared.
     static void ApplyLayered(World world, int baseY, List<HSLiftCell> cells, bool remove)
     {
-        var ring = SnapshotKeepers(world, baseY);
         var groups = new List<HSLiftCell>[] {
             new List<HSLiftCell>(), new List<HSLiftCell>(), new List<HSLiftCell>(), new List<HSLiftCell>()
         };
         foreach (var c in cells) groups[PlaceRank(c)].Add(c);
         int[] order = remove ? new[] { 3, 2, 1, 0 } : new[] { 0, 1, 2, 3 };
+        var batches = new List<List<BlockChangeInfo>>();
+        var writing = new HashSet<Vector3i>();
         bool neighboursChanged = false;
         foreach (var i in order)
         {
@@ -789,33 +794,38 @@ public static class HSLiftCar
             foreach (var c in groups[i])
             {
                 var p = Pos(c, baseY);
+                BlockChangeInfo change;
                 if (!remove)
+                    change = new BlockChangeInfo(p, c.Bv, c.Density, c.Tex);
+                else if (c.GaveWay)
                 {
-                    changes.Add(new BlockChangeInfo(p, c.Bv, c.Density, c.Tex));
-                    continue;
+                    // Our half of a Plate Double leaves; the neighbour's single plate goes back. Otherwise the landing stays.
+                    if (c.Owed == null || c.Owed.OtherRaw == 0) continue;
+                    change = new BlockChangeInfo(p, new BlockValue(c.Owed.OtherRaw), c.Owed.OtherDensity, ToTex(c.Owed.OtherTex));
                 }
-                if (c.GaveWay)
+                else
                 {
-                    // Our half of a Plate Double leaves; the neighbour's single plate goes back.
-                    if (c.Owed != null && c.Owed.OtherRaw != 0)
-                        changes.Add(new BlockChangeInfo(p, new BlockValue(c.Owed.OtherRaw), c.Owed.OtherDensity, ToTex(c.Owed.OtherTex)));
-                    continue;
+                    HSLiftConfigData neighbour;
+                    var theirs = NeighbourOwedAt(p, out neighbour);
+                    if (theirs != null)
+                    {
+                        // The parked neighbour gave way to our block here; its own block takes the cell now.
+                        change = new BlockChangeInfo(p, new BlockValue(theirs.Raw, theirs.Damage), theirs.Density, ToTex(theirs.Tex));
+                        neighbour.GaveWay.Remove(theirs);
+                        neighboursChanged = true;
+                    }
+                    else change = new BlockChangeInfo(p, BlockValue.Air, MarchingCubes.DensityAir);
                 }
-                HSLiftConfigData neighbour;
-                var theirs = NeighbourOwedAt(p, out neighbour);
-                if (theirs != null)
-                {
-                    // The parked neighbour gave way to our block here; its own block takes the cell now.
-                    changes.Add(new BlockChangeInfo(p, new BlockValue(theirs.Raw, theirs.Damage), theirs.Density, ToTex(theirs.Tex)));
-                    neighbour.GaveWay.Remove(theirs);
-                    neighboursChanged = true;
-                    continue;
-                }
-                changes.Add(new BlockChangeInfo(p, BlockValue.Air, MarchingCubes.DensityAir));
+                changes.Add(change);
+                Vector3i wp;
+                if (change.blockValueRef.TryGetBlockPos(out wp)) writing.Add(wp);
             }
-            if (changes.Count > 0) world.SetBlocksRPC(changes);
+            if (changes.Count > 0) batches.Add(changes);
         }
-        RestoreKeepers(world, ring);
+        var kept = SnapshotKeepers(world, baseY, writing);
+        foreach (var batch in batches) world.SetBlocksRPC(batch);
+        RestoreKeepers(world, kept);
+        RestoreKeepersSoon(kept);
         if (neighboursChanged) HSLiftConfiguration.Save();
     }
 
@@ -827,25 +837,38 @@ public static class HSLiftCar
         public TextureFullArray Tex;
     }
 
-    static List<OutsideCell> SnapshotKeepers(World world, int baseY)
+    // Plate Double and sheet on the landing. Door trim on the cabin still rides.
+    static bool IsLandingPlate(BlockValue bv)
+    {
+        if (bv.Block == null || IsRidePiece(bv) || !IsPassThrough(bv)) return false;
+        string shape = "";
+        try { if (bv.Block.shape != null) shape = bv.Block.shape.GetName() ?? ""; } catch { }
+        var name = bv.Block.GetBlockName() ?? "";
+        return name.IndexOf("plateDouble", StringComparison.OrdinalIgnoreCase) >= 0
+            || name.IndexOf("sheet", StringComparison.OrdinalIgnoreCase) >= 0
+            || shape.IndexOf("plateDouble", StringComparison.OrdinalIgnoreCase) >= 0
+            || shape.IndexOf("sheet", StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    static List<OutsideCell> SnapshotKeepers(World world, int baseY, HashSet<Vector3i> writing)
     {
         var list = new List<OutsideCell>();
         if (world == null || !D.HasCar) return list;
-        int y1 = baseY + D.SizeY;
-        for (int y = baseY; y <= y1; y++)
-        for (int x = D.MinX - 1; x <= D.MinX + D.SizeX; x++)
-        for (int z = D.MinZ - 1; z <= D.MinZ + D.SizeZ; z++)
+        int y0 = baseY - 1, y1 = baseY + D.SizeY;
+        for (int y = y0; y <= y1; y++)
+        for (int x = D.MinX - 2; x <= D.MinX + D.SizeX + 1; x++)
+        for (int z = D.MinZ - 2; z <= D.MinZ + D.SizeZ + 1; z++)
         {
             var pos = new Vector3i(x, y, z);
+            if (writing != null && writing.Contains(pos)) continue;
+            bool inside = InRect(x, z) && y >= baseY && y < baseY + D.SizeY;
+            int dist = D.DistOutsideXZ(x, z);
+            if (!inside && (dist < 1 || dist > 2)) continue;
             var chunk = world.GetChunkFromWorldPos(pos) as Chunk;
             if (chunk == null) continue;
             var bv = world.GetBlock(pos);
             if (bv.isair || bv.ischild) continue;
             if (HSLiftDoors.IsCandidateDoor(bv.Block)) continue;
-            bool inside = InBox(pos, baseY);
-            bool ring = !InFootprint(x, z) && D.DistOutsideXZ(x, z) == 1;
-            if (inside) continue;
-            if (!ring) continue;
             int lx = World.toBlockXZ(pos.x), ly = World.toBlockY(pos.y), lz = World.toBlockXZ(pos.z);
             list.Add(new OutsideCell
             {
@@ -860,7 +883,7 @@ public static class HSLiftCar
 
     static void RestoreKeepers(World world, List<OutsideCell> ring)
     {
-        if (ring == null || ring.Count == 0) return;
+        if (ring == null || ring.Count == 0 || world == null) return;
         var changes = new List<BlockChangeInfo>();
         foreach (var s in ring)
         {
@@ -871,8 +894,23 @@ public static class HSLiftCar
         if (changes.Count > 0)
         {
             world.SetBlocksRPC(changes);
-            HSLiftDebug.Verbose("Put back " + changes.Count + " sheet/plate(s) knocked off by the car moving");
+            HSLiftDebug.Info("Put back " + changes.Count + " landing block(s) the car move knocked off");
         }
+    }
+
+    // Stability often deletes the unsupported landing a frame after the car blocks change.
+    static void RestoreKeepersSoon(List<OutsideCell> kept)
+    {
+        if (kept == null || kept.Count == 0) return;
+        var ctrl = HSLiftController.Of(D);
+        if (ctrl != null) ctrl.StartCoroutine(RestoreKeepersNextFrame(kept));
+    }
+
+    static IEnumerator RestoreKeepersNextFrame(List<OutsideCell> kept)
+    {
+        yield return null;
+        var world = GameManager.Instance != null ? GameManager.Instance.World : null;
+        if (world != null) RestoreKeepers(world, kept);
     }
 
     public static string CheckShaftSupport(World world, int baseY)
