@@ -53,6 +53,7 @@ public static class HSLiftFloorSigns
         if (D.ElevatorId == lastLiftId && string.Equals(lastSignToken, text, StringComparison.OrdinalIgnoreCase)) return;
         var shape = ShapeForFloor(floor.Name);
 
+        HSLiftDoors.CollectDoors(world);
         var changes = new List<BlockChangeInfo>();
         var seen = new HashSet<Vector3i>();
         int written = 0;
@@ -90,6 +91,8 @@ public static class HSLiftFloorSigns
             var pos = new Vector3i(center.x + dx, center.y + dy, center.z + dz);
             if (!seen.Add(pos)) continue;
             if (world.GetChunkFromWorldPos(pos) == null) continue;
+            // The sign above this door, not the one above the lift next door.
+            if (HSLiftDoors.LiftBeside(pos) != D) continue;
             var bv = world.GetBlock(pos);
             if (bv.isair || bv.ischild) continue;
             if (TryWriteSign(world, pos, text)) { written++; continue; }

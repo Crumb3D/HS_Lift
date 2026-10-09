@@ -236,6 +236,24 @@ public class HSLiftController : MonoBehaviour
             return null;
         }
         var lift = HSLiftConfiguration.RegisteredPanelOwner(pos);
+        if (lift != null)
+        {
+            HSLiftDoors.CollectDoors(GameManager.Instance.World);
+            var beside = HSLiftDoors.LiftBeside(pos);
+            if (beside != null && beside != lift)
+            {
+                var besideFloor = HSLiftConfiguration.FloorForPanel(beside, pos.y);
+                if (besideFloor != null)
+                {
+                    if (!beside.Panels.Exists(p => p.X == pos.x && p.Y == pos.y && p.Z == pos.z))
+                        beside.Panels.Add(new HSLiftPanelEntry { Stop = besideFloor.Name, X = pos.x, Y = pos.y, Z = pos.z });
+                    HSLiftConfiguration.ForgetPanelOnOtherLifts(beside, pos);
+                    HSLiftConfiguration.Save();
+                    HSLiftDebug.Info("Call panel at " + pos + " sits beside " + beside.ElevatorId + "'s door, so it calls that lift.");
+                    lift = beside;
+                }
+            }
+        }
         if (!Bind(lift))
             return "this panel is not registered (aim at it: hslift panel)";
         var entry = lift.Panels.Find(p => p.X == pos.x && p.Y == pos.y && p.Z == pos.z);

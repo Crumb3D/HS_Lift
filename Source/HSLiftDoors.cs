@@ -128,6 +128,12 @@ public static class HSLiftDoors
             if (found.Contains(parent)) continue;
             var pbv = world.GetBlock(parent);
             if (!IsLiftDoor(parent, pbv)) continue;
+            // A neighbour's door can sit inside this shaft's reach when two lifts share a wall.
+            // Open, close, and call only the door that is actually this lift's.
+            var here = HSLiftConfiguration.Data;
+            var owner = BindDoor(parent, pbv);
+            if (here != null) HSLiftConfiguration.Operate(here);
+            if (owner != here) continue;
             bool overlaps = false;
             foreach (var c in DoorCells(parent, pbv))
                 if (c.y >= yLo && c.y <= yHi) { overlaps = true; break; }
@@ -231,6 +237,68 @@ public static class HSLiftDoors
         var body = world.GetBlock(new Vector3i(floor.x, floor.y + 1, floor.z));
         if (body.isair || HSLiftCar.IsPassThrough(body) || IsCandidateDoor(body.Block)) return true;
         return false;
+    }
+
+    struct BesideDoor
+    {
+        public Vector3i Cell;
+        public HSLiftConfigData Lift;
+        public int OutX, OutZ;
+    }
+
+    static List<BesideDoor> besideDoors;
+
+    // Every lift's own door cells, so a sign or call panel can be matched to the door it sits on.
+    public static void CollectDoors(World world)
+    {
+        besideDoors = new List<BesideDoor>();
+        if (world == null) return;
+        var saved = HSLiftConfiguration.Data;
+        foreach (var d in HSLiftConfiguration.Lifts)
+        {
+            if (d == null || !d.HasCar) continue;
+            HSLiftConfiguration.Operate(d);
+            int top = Math.Max(d.LowerY, d.HasUpper ? d.UpperY : d.LowerY) + Math.Max(1, d.DoorHeight);
+            foreach (var parent in FindDoors(world, d.LowerY, top))
+            {
+                var bv = world.GetBlock(parent);
+                var outward = OutwardDir(parent, bv);
+                foreach (var c in DoorCells(parent, bv))
+                    besideDoors.Add(new BesideDoor { Cell = c, Lift = d, OutX = outward.x, OutZ = outward.z });
+            }
+        }
+        if (saved != null) HSLiftConfiguration.Operate(saved);
+    }
+
+    // The lift whose door this block is above, or immediately left/right of.
+    // Two doors sharing a wall can be the same distance; the block on a door's right wins that tie
+    // (panels are on the right of each door). A sign directly above its door is closer and does not tie.
+    public static HSLiftConfigData LiftBeside(Vector3i pos)
+    {
+        if (besideDoors == null) return null;
+        HSLiftConfigData best = null;
+        int bestH = int.MaxValue;
+        int bestDy = int.MaxValue;
+        int bestSide = int.MinValue;
+        foreach (var r in besideDoors)
+        {
+            int dx = pos.x - r.Cell.x;
+            int dz = pos.z - r.Cell.z;
+            int h = Math.Max(Math.Abs(dx), Math.Abs(dz));
+            if (h > 2) continue;
+            int dy = Math.Abs(pos.y - r.Cell.y);
+            if (dy > 6) continue;
+            // Right, standing on the landing looking at the door. Positive means this block is on that side.
+            int side = dz * r.OutX - dx * r.OutZ;
+            if (h < bestH || (h == bestH && dy < bestDy) || (h == bestH && dy == bestDy && side > bestSide))
+            {
+                bestH = h;
+                bestDy = dy;
+                bestSide = side;
+                best = r.Lift;
+            }
+        }
+        return best;
     }
 
     public static void OpenAtCar(World world)
