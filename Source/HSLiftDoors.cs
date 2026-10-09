@@ -56,8 +56,8 @@ public static class HSLiftDoors
         return DoorDistance(parentPos, parentBv) >= 0;
     }
 
-    // Blocks between this lift's car and the door's closest cell, or -1 when it is not this lift's door
-    // (out of reach, or behind a solid wall: that is a neighbouring shaft's door).
+    // NearRank of the door's closest cell to this lift's car (lower = nearer), or -1 when it is not this
+    // lift's door (out of reach, or behind a solid wall: that is a neighbouring shaft's door).
     static int DoorDistance(Vector3i parentPos, BlockValue parentBv)
     {
         if (!D.HasCar || !DoorKindMatches(parentBv.Block)) return -1;
@@ -66,11 +66,11 @@ public static class HSLiftDoors
         foreach (var p in DoorCells(parentPos, parentBv))
         {
             if (!InShaftRing(p) || p.y < D.LowerY || p.y > ShaftTop) continue;
-            int dist = D.DistOutsideXZ(p.x, p.z);
-            if (dist < best) { best = dist; bestCell = p; }
+            int rank = D.NearRank(p.x, p.z);
+            if (rank < best) { best = rank; bestCell = p; }
         }
         if (best == int.MaxValue) return -1;
-        if (best >= 2 && HSLiftConfiguration.WalledOff(D, bestCell)) return -1;
+        if (D.DistOutsideXZ(bestCell.x, bestCell.z) >= 2 && HSLiftConfiguration.WalledOff(D, bestCell)) return -1;
         return best;
     }
 

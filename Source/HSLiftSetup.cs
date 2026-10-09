@@ -251,7 +251,7 @@ public static class HSLiftSetup
                 if (err != null) return err;
                 BindAimedLift(p);
                 d = HSLiftConfiguration.Data;
-                if (!d.HasCar) return "Set the car first (Corner 1, then Corner 2).";
+                if (!d.HasCar) return d.ElevatorId + " has no car yet: set Corner 1, then Corner 2.";
                 if (string.IsNullOrEmpty(name) || name.Contains(" ")) name = NextFloorName(p.y);
                 if (HSLiftConfiguration.FloorByName(name) != null) return "Floor '" + name + "' already exists. Remove it first.";
                 var same = HSLiftConfiguration.FloorAt(p.y);
@@ -281,7 +281,7 @@ public static class HSLiftSetup
                 if (err != null) return err;
                 BindAimedLift(p);
                 d = HSLiftConfiguration.Data;
-                if (!d.HasCar) return "Set the car first (Corner 1, then Corner 2).";
+                if (!d.HasCar) return d.ElevatorId + " has no car yet: set Corner 1, then Corner 2.";
                 var same = HSLiftConfiguration.FloorAt(p.y);
                 if (same != null && string.Equals(same.Name, "G", StringComparison.OrdinalIgnoreCase))
                     return "Ground Floor is already at this height.\nFloors: " + HSLiftConfiguration.FloorList();
@@ -531,6 +531,10 @@ public static class HSLiftSetup
 
     static void BindAimedLift(Vector3i p)
     {
+        // A lift still being set up (no car corners yet) has no shaft to be "near"; keep it selected
+        // so its panels and floors don't land on the finished lift next door.
+        var cur = HSLiftConfiguration.Data;
+        if (cur != null && !cur.HasCar) return;
         var d = HSLiftConfiguration.LiftAt(p) ?? HSLiftConfiguration.LiftNearXZ(p);
         if (d != null) HSLiftConfiguration.Use(d);
     }

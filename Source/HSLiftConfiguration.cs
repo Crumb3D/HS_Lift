@@ -104,6 +104,19 @@ public class HSLiftConfigData
         return Math.Max(dx, dz);
     }
 
+    // DistOutsideXZ with ties broken by dx + dz: of two side-by-side shafts, the one the cell is square in
+    // front of is nearer than the one it is only diagonal to.
+    public int NearRank(int x, int z)
+    {
+        if (!HasCar) return int.MaxValue;
+        int dx = 0, dz = 0;
+        if (x < MinX) dx = MinX - x;
+        else if (x > MinX + SizeX - 1) dx = x - (MinX + SizeX - 1);
+        if (z < MinZ) dz = MinZ - z;
+        else if (z > MinZ + SizeZ - 1) dz = z - (MinZ + SizeZ - 1);
+        return Math.Max(dx, dz) * 1000 + dx + dz;
+    }
+
     public bool InOutsideRing(int x, int z)
     {
         int d = DistOutsideXZ(x, z);
@@ -433,7 +446,7 @@ public static class HSLiftConfiguration
         foreach (var d in Lifts)
         {
             if (d.Panels == null || !d.Panels.Exists(p => p.X == pos.x && p.Y == pos.y && p.Z == pos.z)) continue;
-            int dist = d.DistOutsideXZ(pos.x, pos.z);
+            int dist = d.NearRank(pos.x, pos.z);
             if (best == null || dist < bestD) { best = d; bestD = dist; }
         }
         return best;
@@ -491,7 +504,7 @@ public static class HSLiftConfiguration
         foreach (var d in Lifts)
         {
             if (!d.HasCar || !d.YOnShaft(pos.y) || !d.InOutsideRing(pos.x, pos.z)) continue;
-            int dist = d.DistOutsideXZ(pos.x, pos.z);
+            int dist = d.NearRank(pos.x, pos.z);
             if (dist < bestD) { bestD = dist; best = d; }
         }
         return best;
@@ -525,7 +538,8 @@ public static class HSLiftConfiguration
             if (!d.HasCar || !d.YOnShaft(pos.y) || !d.InDoorRing(pos.x, pos.z)) continue;
             int dist = d.DistOutsideXZ(pos.x, pos.z);
             if (dist >= 2 && WalledOff(d, pos)) continue;
-            if (dist < bestD) { bestD = dist; best = d; }
+            int rank = d.NearRank(pos.x, pos.z);
+            if (rank < bestD) { bestD = rank; best = d; }
         }
         return best;
     }
@@ -572,7 +586,8 @@ public static class HSLiftConfiguration
             if (!d.HasCar) continue;
             int dist = d.DistOutsideXZ(pos.x, pos.z);
             if (dist > NearLiftBlocks) continue;
-            if (dist < bestD) { bestD = dist; best = d; }
+            int rank = d.NearRank(pos.x, pos.z);
+            if (rank < bestD || (rank == bestD && d.ElevatorId == ActiveId)) { bestD = rank; best = d; }
         }
         return best;
     }
