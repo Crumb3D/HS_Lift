@@ -4,11 +4,11 @@ using System.IO;
 using HarmonyLib;
 using UnityEngine;
 
-// Puts cabin PNGs on unused opaque atlas slots. Does not grow the Texture2DArray
-// (that blacks vanilla paints). Paintbrush Metal group: Lift Floor / Wall / Ceiling.
+// Puts cabin PNGs on unused opaque atlas slots. Paintbrush Metal group: Lift Floor / Wall / Ceiling.
 // A paint's TextureId is a uvMapping id, not an array slot: uvMapping[id].index is the slot.
 // New ids go past the end of uvMapping; slots are only ones no uvMapping entry uses.
-// No free slot (3.3 packs its array to fit) = the three paints are hidden.
+// No free slot (3.3 packs its array to fit) = the arrays are copied GPU-side into 3 bigger ones.
+// If that fails the three paints are hidden.
 [HarmonyPatch(typeof(TextureAtlasBlocks), "LoadTextureAtlas")]
 public static class HSLiftAtlasPatch
 {
@@ -37,9 +37,21 @@ public static class HSLiftAtlasPatch
             int[] ids, slots;
             if (!PickSlots(__instance, arr.depth, out ids, out slots))
             {
-                HSLiftDebug.Warn("No free slot in the block texture array (" + arr.depth + " slots, all used by vanilla). Lift Floor/Wall/Ceiling paints are hidden on this game version.");
-                BindPaintIds();
-                return;
+                int vanillaDepth = arr.depth;
+                if (!GrowArrays(__instance, 3))
+                {
+                    HSLiftDebug.Warn("No free slot in the block texture array (" + vanillaDepth + " slots, all used by vanilla) and it could not be enlarged. Lift Floor/Wall/Ceiling paints are hidden.");
+                    BindPaintIds();
+                    return;
+                }
+                arr = (Texture2DArray)__instance.diffuseTexture;
+                var map = __instance.uvMapping ?? new UVRectTiling[0];
+                for (int i = 0; i < 3; i++)
+                {
+                    slots[i] = vanillaDepth + i;
+                    ids[i] = map.Length + i;
+                }
+                HSLiftDebug.Info("Block texture array enlarged " + vanillaDepth + " -> " + arr.depth + " slots for the Lift paints.");
             }
             FloorId = ids[0];
             WallId = ids[1];
@@ -88,6 +100,75 @@ public static class HSLiftAtlasPatch
         if (found < 3) return false;
         for (int i = 0; i < 3; i++) ids[i] = map.Length + i;
         return true;
+    }
+
+    static Texture2DArray grownDiffuse, grownNormal, grownSpecular;
+
+    // The vanilla arrays stay owned by MeshDescription (it unloads them as assets), so the enlarged
+    // copies only replace the atlas fields that MeshDescription binds to the block materials.
+    // The copies must be made non-readable before the GPU copy: a later Apply() would upload the
+    // empty CPU buffer over every slice and black out vanilla paints.
+    static bool GrowArrays(TextureAtlasBlocks atlas, int extra)
+    {
+        if (SystemInfo.copyTextureSupport == UnityEngine.Rendering.CopyTextureSupport.None) return false;
+        var diff = atlas.diffuseTexture as Texture2DArray;
+        if (diff == null) return false;
+        int depth = diff.depth + extra;
+        var newDiff = Grow(diff, depth);
+        if (newDiff == null) return false;
+        var normal = atlas.normalTexture as Texture2DArray;
+        var specular = atlas.specularTexture as Texture2DArray;
+        var newNormal = normal != null ? Grow(normal, depth) : null;
+        var newSpecular = specular != null ? Grow(specular, depth) : null;
+        if ((normal != null && newNormal == null) || (specular != null && newSpecular == null))
+        {
+            DestroyTex(newDiff);
+            DestroyTex(newNormal);
+            DestroyTex(newSpecular);
+            return false;
+        }
+        atlas.diffuseTexture = newDiff;
+        if (newNormal != null) atlas.normalTexture = newNormal;
+        if (newSpecular != null) atlas.specularTexture = newSpecular;
+        DestroyTex(grownDiffuse);
+        DestroyTex(grownNormal);
+        DestroyTex(grownSpecular);
+        grownDiffuse = newDiff;
+        grownNormal = newNormal;
+        grownSpecular = newSpecular;
+        return true;
+    }
+
+    static Texture2DArray Grow(Texture2DArray src, int depth)
+    {
+        try
+        {
+            var flags = src.mipmapCount > 1
+                ? UnityEngine.Experimental.Rendering.TextureCreationFlags.MipChain
+                : UnityEngine.Experimental.Rendering.TextureCreationFlags.None;
+            var dst = new Texture2DArray(src.width, src.height, depth, src.graphicsFormat, flags, src.mipmapCount);
+            dst.name = src.name + "_hslift";
+            dst.filterMode = src.filterMode;
+            dst.wrapModeU = src.wrapModeU;
+            dst.wrapModeV = src.wrapModeV;
+            dst.anisoLevel = src.anisoLevel;
+            dst.mipMapBias = src.mipMapBias;
+            dst.Apply(false, true);
+            int copy = Math.Min(src.depth, depth);
+            for (int e = 0; e < copy; e++)
+                Graphics.CopyTexture(src, e, dst, e);
+            return dst;
+        }
+        catch (Exception e)
+        {
+            HSLiftDebug.Warn("Could not enlarge texture array " + src.name + ": " + e.Message);
+            return null;
+        }
+    }
+
+    static void DestroyTex(Texture t)
+    {
+        if (t != null) UnityEngine.Object.Destroy(t);
     }
 
     static int FindByName(UVRectTiling[] map, string name)

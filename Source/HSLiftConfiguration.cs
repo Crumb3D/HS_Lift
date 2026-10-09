@@ -53,6 +53,11 @@ public class HSLiftConfigData
     // World X,Z columns inside the car box that are not part of the car (landing doors in the car's wall line).
     public List<int[]> ExcludedColumns = new List<int[]>();
 
+    // Car cells that were not placed at GaveWayY because a landing block already sat there (sheet, plate double,
+    // landing slab). The car still owns these; when it leaves, it takes them and leaves the landing block alone.
+    public int GaveWayY;
+    public List<HSLiftJournalCell> GaveWay = new List<HSLiftJournalCell>();
+
     // Solid plate behind button panels so the empty part of their block isn't see-through.
     public bool PanelBacking; // leftover JSON field; ignored (old silver backing removed)
 
@@ -342,6 +347,7 @@ public static class HSLiftConfiguration
         if (d.ModelOffset == null || d.ModelOffset.Length != 3) d.ModelOffset = new[] { 0.5f, 0.5f, 0.5f };
         if (d.SpeedBlocksPerSecond <= 0.05f) d.SpeedBlocksPerSecond = 1.5f;
         if (d.DoorReach <= 0) d.DoorReach = 2;
+        if (d.GaveWay == null) d.GaveWay = new List<HSLiftJournalCell>();
         var saved = Data;
         Data = d;
         SyncFloors();
@@ -514,9 +520,36 @@ public static class HSLiftConfiguration
         {
             if (!d.HasCar || !d.YOnShaft(pos.y) || !d.InDoorRing(pos.x, pos.z)) continue;
             int dist = d.DistOutsideXZ(pos.x, pos.z);
+            if (dist >= 2 && WalledOff(d, pos)) continue;
             if (dist < bestD) { bestD = dist; best = d; }
         }
         return best;
+    }
+
+    // A door further out than the shaft wall only belongs to this car if nothing solid stands between them
+    // (thick doorway). A door behind a wall is another shaft's door, even when that shaft has no lift yet.
+    public static bool WalledOff(HSLiftConfigData d, Vector3i door)
+    {
+        var world = GameManager.Instance != null ? GameManager.Instance.World : null;
+        if (world == null) return false;
+        int cx = Math.Max(d.MinX, Math.Min(d.MinX + d.SizeX - 1, door.x));
+        int cz = Math.Max(d.MinZ, Math.Min(d.MinZ + d.SizeZ - 1, door.z));
+        int sx = Math.Sign(cx - door.x), sz = Math.Sign(cz - door.z);
+        var saved = Data;
+        Data = d;
+        try
+        {
+            int x = door.x + sx, z = door.z + sz;
+            while (x != cx || z != cz)
+            {
+                var bv = world.GetBlock(new Vector3i(x, door.y, z));
+                if (!bv.isair && !HSLiftDoors.IsCandidateDoor(bv.Block) && !HSLiftCar.IsPassThrough(bv)) return true;
+                if (x != cx) x += sx;
+                if (z != cz) z += sz;
+            }
+            return false;
+        }
+        finally { Data = saved; }
     }
 
     public static HSLiftConfigData LiftAt(Vector3i pos)

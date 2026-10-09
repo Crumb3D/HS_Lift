@@ -53,10 +53,25 @@ public static class HSLiftDoors
     // Checks every cell of the door (multi-block doors can touch the shaft with any part).
     public static bool IsLiftDoor(Vector3i parentPos, BlockValue parentBv)
     {
-        if (!D.HasCar || !DoorKindMatches(parentBv.Block)) return false;
+        return DoorDistance(parentPos, parentBv) >= 0;
+    }
+
+    // Blocks between this lift's car and the door's closest cell, or -1 when it is not this lift's door
+    // (out of reach, or behind a solid wall: that is a neighbouring shaft's door).
+    static int DoorDistance(Vector3i parentPos, BlockValue parentBv)
+    {
+        if (!D.HasCar || !DoorKindMatches(parentBv.Block)) return -1;
+        int best = int.MaxValue;
+        var bestCell = parentPos;
         foreach (var p in DoorCells(parentPos, parentBv))
-            if (InShaftRing(p) && p.y >= D.LowerY && p.y <= ShaftTop) return true;
-        return false;
+        {
+            if (!InShaftRing(p) || p.y < D.LowerY || p.y > ShaftTop) continue;
+            int dist = D.DistOutsideXZ(p.x, p.z);
+            if (dist < best) { best = dist; bestCell = p; }
+        }
+        if (best == int.MaxValue) return -1;
+        if (best >= 2 && HSLiftConfiguration.WalledOff(D, bestCell)) return -1;
+        return best;
     }
 
     public static IEnumerable<Vector3i> DoorCells(Vector3i parentPos, BlockValue bv)
@@ -74,10 +89,12 @@ public static class HSLiftDoors
         if (!IsElevatorDoor(parentBv.Block)) return null;
         var saved = HSLiftConfiguration.Data;
         HSLiftConfigData owner = null;
+        int ownerDist = int.MaxValue;
         foreach (var d in HSLiftConfiguration.Lifts)
         {
             HSLiftConfiguration.Use(d);
-            if (IsLiftDoor(parentPos, parentBv)) { owner = d; break; }
+            int dist = DoorDistance(parentPos, parentBv);
+            if (dist >= 0 && dist < ownerDist) { owner = d; ownerDist = dist; }
         }
         if (owner != null) HSLiftConfiguration.Use(owner);
         else if (saved != null) HSLiftConfiguration.Use(saved);
@@ -110,6 +127,7 @@ public static class HSLiftDoors
             var parent = bv.ischild ? bv.Block.multiBlockPos.GetParentPos(p, bv) : p;
             if (found.Contains(parent)) continue;
             var pbv = world.GetBlock(parent);
+            if (!IsLiftDoor(parent, pbv)) continue;
             bool overlaps = false;
             foreach (var c in DoorCells(parent, pbv))
                 if (c.y >= yLo && c.y <= yHi) { overlaps = true; break; }

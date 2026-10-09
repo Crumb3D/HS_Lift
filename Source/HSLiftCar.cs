@@ -12,6 +12,11 @@ public class HSLiftCell
     public TextureFullArray Tex;
     [JsonIgnore]
     public TileEntity Te;
+    // Car block that is not in the world at the parked spot (a landing block or a neighbour's wall holds that cell).
+    [JsonIgnore]
+    public bool GaveWay;
+    [JsonIgnore]
+    public HSLiftJournalCell Owed;
 }
 
 public class HSLiftJournalCell
@@ -21,6 +26,11 @@ public class HSLiftJournalCell
     public int Damage;
     public sbyte Density;
     public long[] Tex;
+    public bool GaveWay;
+    // Shared wall line: the neighbour lift's own plate that was merged with ours into one Plate Double.
+    public uint OtherRaw;
+    public sbyte OtherDensity;
+    public long[] OtherTex;
 }
 
 public class HSLiftJournal
@@ -491,6 +501,20 @@ public static class HSLiftCar
             var pos = new Vector3i(D.MinX + dx, baseY + dy, D.MinZ + dz);
             var chunk = world.GetChunkFromWorldPos(pos) as Chunk;
             if (chunk == null) return "chunk not loaded at " + pos;
+            var owed = GaveWayAt(baseY, dx, dy, dz);
+            if (owed != null)
+            {
+                cells.Add(FromJournal(owed));
+                continue;
+            }
+            HSLiftConfigData neighbour;
+            var theirs = NeighbourOwedAt(pos, out neighbour);
+            if (theirs != null && theirs.OtherRaw != 0)
+            {
+                // A Plate Double the neighbour made from its plate and ours: our part is the plate it stored.
+                cells.Add(new HSLiftCell { Dx = dx, Dy = dy, Dz = dz, Bv = new BlockValue(theirs.OtherRaw), Density = theirs.OtherDensity, Tex = ToTex(theirs.OtherTex) });
+                continue;
+            }
             var bv = world.GetBlock(pos);
             if (bv.isair) continue;
             var block = bv.Block;
@@ -553,6 +577,7 @@ public static class HSLiftCar
                 // Floor/wall cells sweep through the parked cabin (other dy at this XZ). That is the car, not a shaft block.
                 if (InBox(new Vector3i(x, y, z), fromY)) continue;
                 if (IsRegisteredFloorY(y) && y != fromY) continue;
+                if (ParkedNeighbourAt(new Vector3i(x, y, z)) != null) continue;
                 var err = CheckClear(world, new Vector3i(x, y, z), "is blocking the lift shaft", true);
                 if (err != null) return err;
             }
@@ -568,6 +593,7 @@ public static class HSLiftCar
             if (IsRidePiece(c.Bv)) continue;
             var p = Pos(c, toY);
             if (!IsExcluded(p.x, p.z) || InBox(p, fromY)) continue;
+            if (ParkedNeighbourAt(p) != null) continue;
             var err = CheckClear(world, p, "is in the way where the car stops", true);
             if (err != null) return err;
         }
@@ -753,6 +779,7 @@ public static class HSLiftCar
         };
         foreach (var c in cells) groups[PlaceRank(c)].Add(c);
         int[] order = remove ? new[] { 3, 2, 1, 0 } : new[] { 0, 1, 2, 3 };
+        bool neighboursChanged = false;
         foreach (var i in order)
         {
             if (groups[i].Count == 0) continue;
@@ -760,12 +787,34 @@ public static class HSLiftCar
             foreach (var c in groups[i])
             {
                 var p = Pos(c, baseY);
-                if (remove) changes.Add(new BlockChangeInfo(p, BlockValue.Air, MarchingCubes.DensityAir));
-                else changes.Add(new BlockChangeInfo(p, c.Bv, c.Density, c.Tex));
+                if (!remove)
+                {
+                    changes.Add(new BlockChangeInfo(p, c.Bv, c.Density, c.Tex));
+                    continue;
+                }
+                if (c.GaveWay)
+                {
+                    // Our half of a Plate Double leaves; the neighbour's single plate goes back.
+                    if (c.Owed != null && c.Owed.OtherRaw != 0)
+                        changes.Add(new BlockChangeInfo(p, new BlockValue(c.Owed.OtherRaw), c.Owed.OtherDensity, ToTex(c.Owed.OtherTex)));
+                    continue;
+                }
+                HSLiftConfigData neighbour;
+                var theirs = NeighbourOwedAt(p, out neighbour);
+                if (theirs != null)
+                {
+                    // The parked neighbour gave way to our block here; its own block takes the cell now.
+                    changes.Add(new BlockChangeInfo(p, new BlockValue(theirs.Raw, theirs.Damage), theirs.Density, ToTex(theirs.Tex)));
+                    neighbour.GaveWay.Remove(theirs);
+                    neighboursChanged = true;
+                    continue;
+                }
+                changes.Add(new BlockChangeInfo(p, BlockValue.Air, MarchingCubes.DensityAir));
             }
-            world.SetBlocksRPC(changes);
+            if (changes.Count > 0) world.SetBlocksRPC(changes);
         }
         RestoreKeepers(world, ring);
+        if (neighboursChanged) HSLiftConfiguration.Save();
     }
 
     struct OutsideCell
@@ -869,6 +918,7 @@ public static class HSLiftCar
             if (IsRidePiece(c.Bv)) continue;
             var p = Pos(c, baseY);
             if (IsRegisteredFloorY(p.y)) continue;
+            if (ParkedNeighbourAt(p) != null) continue;
             var err = CheckClear(world, p, "is in the way where the car stops", true);
             if (err != null) return err;
             var block = c.Bv.Block;
@@ -882,17 +932,58 @@ public static class HSLiftCar
             }
         }
         var place = new List<HSLiftCell>();
+        var gaveWay = new List<HSLiftJournalCell>();
+        var merges = new List<BlockChangeInfo>();
         foreach (var c in cells)
         {
             var destPos = Pos(c, baseY);
             var dest = world.GetBlock(destPos);
-            if (!dest.isair && IsRidePiece(c.Bv)) continue;
-            if (!dest.isair && IsPassThrough(dest) && !IsRidePiece(c.Bv)) continue;
-            if (!dest.isair && IsRegisteredFloorY(destPos.y)) continue;
+            if (dest.isair)
+            {
+                place.Add(c);
+                continue;
+            }
+            HSLiftConfigData neighbour;
+            bool neighbourGaveWay = NeighbourOwedAt(destPos, out neighbour) != null;
+            if (neighbour != null && !neighbourGaveWay)
+            {
+                // Shared wall line: the parked neighbour's block is already here.
+                var entry = ToJournal(c);
+                entry.GaveWay = true;
+                BlockValue dbl;
+                if (TryPlateDouble(c.Bv, dest, out dbl))
+                {
+                    var chunk = world.GetChunkFromWorldPos(destPos) as Chunk;
+                    if (chunk != null)
+                    {
+                        int lx = World.toBlockXZ(destPos.x), ly = World.toBlockY(destPos.y), lz = World.toBlockXZ(destPos.z);
+                        var theirTex = chunk.GetTextureFullArray(lx, ly, lz);
+                        entry.OtherRaw = dest.rawData;
+                        entry.OtherDensity = chunk.GetDensity(lx, ly, lz);
+                        entry.OtherTex = FromTex(theirTex);
+                        merges.Add(new BlockChangeInfo(destPos, dbl, entry.OtherDensity, MergePaint(theirTex, c.Tex)));
+                    }
+                }
+                gaveWay.Add(entry);
+                continue;
+            }
+            if (IsRidePiece(c.Bv) || IsPassThrough(dest) || IsRegisteredFloorY(destPos.y) || neighbourGaveWay)
+            {
+                gaveWay.Add(ToJournal(c));
+                continue;
+            }
             place.Add(c);
         }
         ApplyLayered(world, baseY, place, false);
+        if (merges.Count > 0)
+        {
+            world.SetBlocksRPC(merges);
+            HSLiftDebug.Info("Shared wall: " + merges.Count + " plate(s) joined with the neighbouring lift's into Plate Doubles at Y" + baseY);
+        }
         RestoreTileEntities(world, baseY, place);
+        D.GaveWayY = baseY;
+        D.GaveWay = gaveWay;
+        if (gaveWay.Count > 0) HSLiftDebug.Info("Parked at Y" + baseY + ": " + gaveWay.Count + " car block(s) gave way to landing blocks; the car keeps them for its next trip.");
         HSLiftDebug.Verbose("Placed " + place.Count + " car blocks back at Y" + baseY + " (walls first, then floor and ceiling; " + (cells.Count - place.Count) + " left as pass-through sheets)");
         return null;
     }
@@ -1104,16 +1195,119 @@ public static class HSLiftCar
 
     public static int NetTexChannels { get { return TexChannels; } }
 
+    static HSLiftJournalCell ToJournal(HSLiftCell c)
+    {
+        int n = TexChannels;
+        var tex = new long[n];
+        for (int i = 0; i < n; i++) tex[i] = c.Tex[i];
+        var j = new HSLiftJournalCell { Dx = c.Dx, Dy = c.Dy, Dz = c.Dz, Raw = c.Bv.rawData, Damage = c.Bv.damage, Density = c.Density, Tex = tex, GaveWay = c.GaveWay };
+        if (c.Owed != null)
+        {
+            j.OtherRaw = c.Owed.OtherRaw;
+            j.OtherDensity = c.Owed.OtherDensity;
+            j.OtherTex = c.Owed.OtherTex;
+        }
+        return j;
+    }
+
+    static HSLiftCell FromJournal(HSLiftJournalCell jc)
+    {
+        return new HSLiftCell { Dx = jc.Dx, Dy = jc.Dy, Dz = jc.Dz, Bv = new BlockValue(jc.Raw, jc.Damage), Density = jc.Density, Tex = ToTex(jc.Tex), GaveWay = true, Owed = jc };
+    }
+
+    static TextureFullArray ToTex(long[] raw)
+    {
+        var tex = TextureFullArray.Default;
+        if (raw != null)
+            for (int i = 0; i < raw.Length && i < TexChannels; i++) tex[i] = raw[i];
+        return tex;
+    }
+
+    static long[] FromTex(TextureFullArray tex)
+    {
+        var raw = new long[TexChannels];
+        for (int i = 0; i < raw.Length; i++) raw[i] = tex[i];
+        return raw;
+    }
+
+    static HSLiftJournalCell GaveWayAt(int baseY, int dx, int dy, int dz)
+    {
+        return GaveWayAt(D, baseY, dx, dy, dz);
+    }
+
+    static HSLiftJournalCell GaveWayAt(HSLiftConfigData d, int baseY, int dx, int dy, int dz)
+    {
+        if (d.GaveWay == null || d.GaveWay.Count == 0 || d.GaveWayY != baseY) return null;
+        foreach (var g in d.GaveWay)
+            if (g != null && g.Dx == dx && g.Dy == dy && g.Dz == dz) return g;
+        return null;
+    }
+
+    // --- shared wall line between two side-by-side lifts ---
+
+    static bool IsParked(HSLiftConfigData d)
+    {
+        var c = HSLiftController.Of(d);
+        return c == null || !c.IsThisMoving;
+    }
+
+    // Another lift whose parked car box holds this world cell: the two cars share this wall line.
+    static HSLiftConfigData ParkedNeighbourAt(Vector3i p)
+    {
+        foreach (var o in HSLiftConfiguration.Lifts)
+        {
+            if (o == null || o == D || !o.HasCar || !IsParked(o)) continue;
+            if (p.x < o.MinX || p.x >= o.MinX + o.SizeX || p.z < o.MinZ || p.z >= o.MinZ + o.SizeZ) continue;
+            if (p.y >= o.CurrentY && p.y < o.CurrentY + Math.Max(1, o.SizeY)) return o;
+        }
+        return null;
+    }
+
+    // A parked neighbour's car block that is not in the world at p because it gave way there.
+    static HSLiftJournalCell NeighbourOwedAt(Vector3i p, out HSLiftConfigData owner)
+    {
+        owner = ParkedNeighbourAt(p);
+        if (owner == null) return null;
+        return GaveWayAt(owner, owner.CurrentY, p.x - owner.MinX, p.y - owner.CurrentY, p.z - owner.MinZ);
+    }
+
+    // Two plates of the same material facing opposite ways in one cell become that material's Plate Double.
+    static bool TryPlateDouble(BlockValue mine, BlockValue theirs, out BlockValue dbl)
+    {
+        dbl = BlockValue.Air;
+        if (mine.Block == null || theirs.Block == null) return false;
+        var a = mine.Block.GetBlockName();
+        if (!string.Equals(a, theirs.Block.GetBlockName(), StringComparison.OrdinalIgnoreCase)) return false;
+        int c = a.LastIndexOf(':');
+        if (c < 0 || !string.Equals(a.Substring(c + 1), "plate", StringComparison.OrdinalIgnoreCase)) return false;
+        var v = Block.GetBlockValue(a.Substring(0, c + 1) + "plateDouble");
+        if (v.isair || v.type == 0) return false;
+        v.rotation = theirs.rotation;
+        dbl = v;
+        return true;
+    }
+
+    // Paint is one byte per face; keep whatever each plate had painted, the neighbour's first.
+    static TextureFullArray MergePaint(TextureFullArray theirs, TextureFullArray mine)
+    {
+        var tex = theirs;
+        for (int ch = 0; ch < TexChannels; ch++)
+        {
+            long a = theirs[ch], b = mine[ch], r = a;
+            for (int f = 0; f < 6; f++)
+            {
+                long mask = 0xFFL << (f * 8);
+                if ((a & mask) == 0) r |= b & mask;
+            }
+            tex[ch] = r;
+        }
+        return tex;
+    }
+
     public static void WriteJournal(int baseY, List<HSLiftCell> cells)
     {
         var j = new HSLiftJournal { ElevatorId = D.ElevatorId, MinX = D.MinX, MinZ = D.MinZ, BaseY = baseY };
-        int n = TexChannels;
-        foreach (var c in cells)
-        {
-            var tex = new long[n];
-            for (int i = 0; i < n; i++) tex[i] = c.Tex[i];
-            j.Cells.Add(new HSLiftJournalCell { Dx = c.Dx, Dy = c.Dy, Dz = c.Dz, Raw = c.Bv.rawData, Damage = c.Bv.damage, Density = c.Density, Tex = tex });
-        }
+        foreach (var c in cells) j.Cells.Add(ToJournal(c));
         var dir = JournalDir;
         if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
         File.WriteAllText(JournalPath, JsonConvert.SerializeObject(j));
@@ -1167,6 +1361,7 @@ public static class HSLiftCar
         }
 
         var restore = new List<HSLiftCell>();
+        var gaveWay = new List<HSLiftJournalCell>();
         int already = 0;
         foreach (var jc in j.Cells)
         {
@@ -1177,15 +1372,17 @@ public static class HSLiftCar
             if (cur.type == bv.type) { already++; continue; }
             if (!cur.isair)
             {
+                if (jc.GaveWay) { gaveWay.Add(jc); continue; }
                 HSLiftDebug.Error("Journal recovery blocked: " + cur.Block.GetBlockName() + " at " + pos + ". Journal kept at " + JournalPath);
                 return true;
             }
-            var tex = TextureFullArray.Default;
-            if (jc.Tex != null)
-                for (int i = 0; i < jc.Tex.Length && i < TexChannels; i++) tex[i] = jc.Tex[i];
-            restore.Add(new HSLiftCell { Dx = jc.Dx, Dy = jc.Dy, Dz = jc.Dz, Bv = bv, Density = jc.Density, Tex = tex });
+            var cell = FromJournal(jc);
+            cell.GaveWay = false;
+            restore.Add(cell);
         }
         if (restore.Count > 0) ApplyLayered(world, j.BaseY, restore, false);
+        D.GaveWayY = j.BaseY;
+        D.GaveWay = gaveWay;
         HSLiftDebug.Info("Journal recovery: restored " + restore.Count + " car blocks at Y" + j.BaseY + " (" + already + " already in place).");
         D.CurrentY = j.BaseY;
         HSLiftConfiguration.Save();

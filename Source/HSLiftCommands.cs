@@ -25,6 +25,7 @@ public class ConsoleCmdHSLift : ConsoleCmdAbstract
             "hslift type ped | vehicle     - START a new lift. ped = 3D cabin + elevator doors. vehicle = floor platform only + garage/roll-up doors. Never overwrites another lift.\n" +
             "hslift list                   - list every lift (* = the one you are editing)\n" +
             "hslift select                 - aim at a lift: make that one the one you are editing\n" +
+            "hslift delete <id>            - forget a lift's setup (e.g. a duplicate); its blocks stay in the world\n" +
             "hslift floor add <name>       - aim at a landing floor block: adds a floor (G is set with the car)\n" +
             "hslift floor ground           - aim at a landing: that height becomes G. Floors above become 1, 2, …\n" +
             "hslift floor remove <name>    - forget a floor\n" +

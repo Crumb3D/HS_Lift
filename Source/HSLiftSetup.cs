@@ -79,6 +79,21 @@ public static class HSLiftSetup
                     return "US floors: G shows as 1, 1 as 2, 2 as 3. Basements stay B. Signs and the floor menu use this; console names stay G/1/2.";
                 return "GB floors: G, 1, 2 (Ground, 1st, 2nd). Signs and the floor menu match.";
             }
+            case "delete":
+            case "forget":
+            {
+                var target = string.IsNullOrEmpty(arg) ? null : HSLiftConfiguration.ById(arg);
+                if (target == null) return "Usage: hslift delete <id>   (forgets that lift's setup; blocks in the world are not touched)\n" + HSLiftConfiguration.ListLifts();
+                var ctrl = HSLiftController.Of(target);
+                if (ctrl != null && ctrl.IsThisMoving) return target.ElevatorId + " is moving. Wait until it stops.";
+                if (HSLiftCar.HasJournalFor(target.ElevatorId)) return target.ElevatorId + " is still restoring its car after an interrupted move. Try again once it is back.";
+                HSLiftController.Forget(target);
+                HSLiftConfiguration.Lifts.Remove(target);
+                if (HSLiftConfiguration.Lifts.Count == 0) HSLiftConfiguration.NewLift("ped");
+                else if (HSLiftConfiguration.Data == target) HSLiftConfiguration.Use(HSLiftConfiguration.Lifts[0]);
+                HSLiftConfiguration.Save();
+                return target.ElevatorId + " deleted (setup only; its blocks stay in the world). Now editing " + HSLiftConfiguration.Data.ElevatorId + ".\n" + HSLiftConfiguration.ListLifts();
+            }
             case "type":
             case "new":
             {
@@ -402,7 +417,18 @@ public static class HSLiftSetup
             d.HasCar = false;
             return "Vehicle lift is a platform only: both corners must be on the same Y (got Y" + minY + " and Y" + maxY + "). No walls or ceiling.";
         }
+        foreach (var other in HSLiftConfiguration.Lifts)
+        {
+            if (other == d || other == null || !other.HasCar) continue;
+            int ox = Math.Min(maxX, other.MinX + other.SizeX - 1) - Math.Max(minX, other.MinX) + 1;
+            int oz = Math.Min(maxZ, other.MinZ + other.SizeZ - 1) - Math.Max(minZ, other.MinZ) + 1;
+            if (ox <= 0 || oz <= 0 || ox == 1 || oz == 1) continue;
+            d.HasCar = false;
+            return "These corners overlap " + other.ElevatorId + "'s car (X" + other.MinX + " Z" + other.MinZ + ", " + other.SizeX + "x" + other.SizeZ
+                + "). Two lifts may only share one wall line. Pick the other shaft's corners, or remove the old one: hslift delete " + other.ElevatorId;
+        }
         bool moved = d.MinX != minX || d.MinZ != minZ || d.SizeX != maxX - minX + 1 || d.SizeZ != maxZ - minZ + 1;
+        if (d.GaveWay != null) d.GaveWay.Clear();
         d.MinX = minX; d.MinZ = minZ;
         d.SizeX = maxX - minX + 1;
         d.SizeY = HSLiftConfiguration.IsVehicle ? 1 : maxY - minY + 1;

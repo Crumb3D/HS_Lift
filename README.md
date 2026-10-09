@@ -2,7 +2,7 @@
 
 Build your own passenger or vehicle elevators in **7 Days to Die**. You build the cabin or garage pad from vanilla blocks. HS Lift **moves** that structure — it does not spawn a premade car, and it will not chew through blocks in the shaft.
 
-**Version 1.0.12** — dual-load **7 Days to Die 3.2 and 3.3**. Cabin paints follow the opaque atlas depth (3.2: 508–510; 3.3: last three slices).
+**Version 1.0.18** — dual-load **7 Days to Die 3.2 and 3.3**. Cabin paints use free opaque atlas slots on 3.2; on 3.3 the array is enlarged by three slots.
 
 License: [MIT](LICENSE). Author: Crumb.
 
@@ -110,6 +110,10 @@ Admin: `hslift status` lists what is still missing.
 
 Do **not** build cabin **walls** out of sheets.
 
+When the car stops at a floor, any landing block already sitting in a car cell (sheets, Plate Double, door trim, the floor slab) stays where it is, and the car leaves it behind when it moves on.
+
+**Two lifts side by side** can share one wall line: set the second lift's corners so its wall sits in the same blocks as the first lift's wall. The corners refuse any deeper overlap. When both cars are parked at the same height, each pair of plates in the shared line joins into one **Plate Double** (same material only). When either car leaves, the other car's single plate goes back. A landing door belongs to the lift it is in front of: a door is never bound to a lift through a solid wall.
+
 Anything you place **inside the car box** rides with it, including chests and lanterns. Terrain / dirt cannot. Keep the lift’s power wire on an **outside** panel.
 
 Floor scheme (menus and signs): default **GB** is G, 1, 2. **US** shows G as 1, 1 as 2. Set `"FloorScheme": "us"` in the world-save `HSLift.json` and restart, or `hslift scheme us`.
@@ -149,6 +153,7 @@ F1 console (admin). `hslift` prints the full list. Common:
 | `hslift go G` | Send the car |
 | `hslift debris` | Clear dirt/rubble in this shaft |
 | `hslift exclude` | Aim at a landing slab; it stays put |
+| `hslift delete <id>` | Forget a lift's setup (e.g. a duplicate). Its blocks stay in the world |
 
 ---
 
@@ -181,6 +186,8 @@ Open an issue on the GitHub repository with the game version, what you built, an
 ---
 
 ## Changelog
+
+**1.0.18** — The car no longer carries landing blocks (sheets, Plate Double, slabs) away when it leaves a floor. Landing doors only call the lift they face. Side-by-side lifts can share a wall line, and parked shared plates join into a Plate Double. Corners refuse deeper overlaps. Adds `hslift delete <id>`. On 3.3 the block texture array is enlarged so the Lift paints show.
 
 **1.0.11** — Removed AutoPaintInterior from settings and world JSON. Cabin look is paintbrush only.
 

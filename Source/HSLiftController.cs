@@ -52,6 +52,18 @@ public class HSLiftController : MonoBehaviour
         if (Bound != null) HSLiftConfiguration.Use(Bound);
     }
 
+    public static void Forget(HSLiftConfigData d)
+    {
+        var c = Of(d);
+        if (c == null) return;
+        all.Remove(c);
+        c.StopMoveSound();
+        c.StopPreviewInternal();
+        c.FinishRelease();
+        c.move.Destroy();
+        Destroy(c.gameObject);
+    }
+
     public static void EnsureCreated()
     {
         foreach (var d in HSLiftConfiguration.Lifts) Ensure(d);
