@@ -239,11 +239,13 @@ public static class HSLiftConfiguration
         if (d == null) return "Active Lift: none - Total Lifts: " + total;
         int floors = d.Floors != null ? d.Floors.Count : 0;
         int panels = d.Panels != null ? d.Panels.Count : 0;
-        int needing = 0;
+        var needingNames = new List<string>();
         if (d.Floors != null)
             foreach (var f in d.Floors)
                 if (f != null && (d.Panels == null || !d.Panels.Exists(p => p != null && string.Equals(p.Stop, f.Name, StringComparison.OrdinalIgnoreCase))))
-                    needing++;
+                    needingNames.Add(FloorSignText(f.Name));
+        int needing = needingNames.Count;
+        string needingText = needing == 0 ? "0" : needing + " (" + string.Join(", ", needingNames.ToArray()) + ")";
         string cabin;
         if (d.HasCar) cabin = "Yes (" + d.SizeX + "x" + d.SizeY + "x" + d.SizeZ + ")";
         else
@@ -263,7 +265,7 @@ public static class HSLiftConfiguration
             + "\n" + setLabel + ": " + cabin
             + "\nFloors: " + floors
             + "\nPanels: " + panels
-            + "\nFloors Needing Panels: " + needing
+            + "\nFloors Needing Panels: " + needingText
             + "\nPower: " + power
             + "\nCar: " + car
             + "\nState: " + state;

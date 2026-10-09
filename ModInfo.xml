@@ -4,6 +4,6 @@
   <DisplayName value="HS Lift" />
   <Description value="Player-built elevators. Craft the Elevator Handbook (1 paper) or Journal → Challenges → HS Lift. Printable PDF: Handbook.html in this folder. Setup tool: hold E. Admin: hslift" />
   <Author value="Crumb" />
-  <Version value="1.0.24" />
+  <Version value="1.0.25" />
   <SkipWithAntiCheat value="true" />
 </xml>
