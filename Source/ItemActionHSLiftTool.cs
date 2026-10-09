@@ -149,6 +149,13 @@ public class ItemActionHSLiftTool : ItemAction
         try
         {
             var player = sender.xui.playerUI.entityPlayer;
+            // A quick tap of E runs the first wheel entry before the wheel is on screen. That entry is
+            // New Ped Lift, so a tap was starting an empty lift and making it the one being edited.
+            if ((commandIndex == 0 || commandIndex == 1) && sender != null && UnityEngine.Time.time - sender.openTime < 0.3f)
+            {
+                HSLiftSetup.Tell(player, "Hold E and pick New Ped Lift. A tap does not start a lift.");
+                return;
+            }
             string msg;
             switch (commandIndex)
             {

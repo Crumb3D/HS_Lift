@@ -3,6 +3,28 @@ using UnityEngine;
 
 public class BlockHSLiftOutsidePanel : BlockPowered
 {
+    public override void OnBlockRemoved(WorldBase _world, Chunk _chunk, Vector3i _blockPos, BlockValue _blockValue)
+    {
+        base.OnBlockRemoved(_world, _chunk, _blockPos, _blockValue);
+        try
+        {
+            if (_blockValue.ischild) return;
+            var pos = ParentPos(_blockPos, _blockValue);
+            bool changed = false;
+            foreach (var d in HSLiftConfiguration.Lifts)
+            {
+                if (d == null || d.Panels == null) continue;
+                if (d.Panels.RemoveAll(e => e != null && e.X == pos.x && e.Y == pos.y && e.Z == pos.z) > 0)
+                    changed = true;
+            }
+            if (changed) HSLiftConfiguration.Save();
+        }
+        catch (Exception e)
+        {
+            HSLiftDebug.Error("Outside panel remove failed", e);
+        }
+    }
+
     public override TileEntityPowered CreateTileEntity(Chunk chunk)
     {
         return base.CreateTileEntity(chunk);

@@ -23,7 +23,7 @@ public class HSLiftMod : IModApi
         {
             HSLiftDebug.Error("Could not move lift save out of the mod folder", e);
         }
-        HSLiftDebug.Info("Init v1.0.22 - active lift stays until New or Use This Lift, tool readout; admin: hslift");
+        HSLiftDebug.Info("Init v1.0.23 - a tap of E does not start a lift; destroyed panels unregister; admin: hslift");
         HSLiftNet.RegisterPackage();
         ModEvents.GameStartDone.RegisterHandler(OnGameStartDone);
         ModEvents.WorldShuttingDown.RegisterHandler(OnWorldShuttingDown);
