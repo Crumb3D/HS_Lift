@@ -74,6 +74,20 @@ public static class HSLiftDoors
         return best;
     }
 
+    // How squarely this door sits in front of the current car. Breaks a tie when two shafts share a wall.
+    static int DoorCenterDist(Vector3i parentPos, BlockValue parentBv)
+    {
+        int cx = D.MinX + D.SizeX / 2, cz = D.MinZ + D.SizeZ / 2;
+        int best = int.MaxValue;
+        foreach (var p in DoorCells(parentPos, parentBv))
+        {
+            if (!InShaftRing(p)) continue;
+            int d = Math.Abs(p.x - cx) + Math.Abs(p.z - cz);
+            if (d < best) best = d;
+        }
+        return best;
+    }
+
     public static IEnumerable<Vector3i> DoorCells(Vector3i parentPos, BlockValue bv)
     {
         yield return parentPos;
@@ -90,11 +104,19 @@ public static class HSLiftDoors
         var saved = HSLiftConfiguration.Data;
         HSLiftConfigData owner = null;
         int ownerDist = int.MaxValue;
+        int ownerCenter = int.MaxValue;
         foreach (var d in HSLiftConfiguration.Lifts)
         {
             HSLiftConfiguration.Operate(d);
             int dist = DoorDistance(parentPos, parentBv);
-            if (dist >= 0 && dist < ownerDist) { owner = d; ownerDist = dist; }
+            if (dist < 0) continue;
+            int center = DoorCenterDist(parentPos, parentBv);
+            if (dist < ownerDist || (dist == ownerDist && center < ownerCenter))
+            {
+                owner = d;
+                ownerDist = dist;
+                ownerCenter = center;
+            }
         }
         if (owner != null) HSLiftConfiguration.Operate(owner);
         else if (saved != null) HSLiftConfiguration.Operate(saved);
@@ -309,6 +331,7 @@ public static class HSLiftDoors
     public static void OpenAtCar(World world, bool autoClose)
     {
         if (!D.HasCar) return;
+        if (HSLiftConfiguration.FloorAt(D.CurrentY) == null) return;
         SetDoors(world, D.CurrentY, D.CurrentY + D.DoorHeight - 1, true);
         HSLiftFloorSigns.UpdateToCurrentFloor(world);
         var c = HSLiftController.Of(D);

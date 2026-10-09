@@ -732,6 +732,7 @@ public class HSLiftController : MonoBehaviour
                 if (y == fromY + c.Dy) continue;
                 if (HSLiftCar.InBox(new Vector3i(x, y, z), fromY)) continue;
                 if (HSLiftCar.IsRegisteredFloorY(y) && y != fromY) continue;
+                if (HSLiftCar.CellIsParkedNeighbour(new Vector3i(x, y, z))) continue;
                 var err = HSLiftCar.CheckClear(world, new Vector3i(x, y, z), "is blocking the lift shaft", true);
                 if (err != null) return err;
             }
@@ -749,6 +750,7 @@ public class HSLiftController : MonoBehaviour
             {
                 if (y >= fromY && y < fromY + h) continue;
                 if (HSLiftCar.IsRegisteredFloorY(y) && y != fromY) continue;
+                if (HSLiftCar.CellIsParkedNeighbour(new Vector3i(x, y, z))) continue;
                 var err = HSLiftCar.CheckClear(world, new Vector3i(x, y, z), "is blocking the lift shaft", true);
                 if (err != null) return err;
             }

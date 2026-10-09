@@ -23,7 +23,7 @@ public class HSLiftMod : IModApi
         {
             HSLiftDebug.Error("Could not move lift save out of the mod folder", e);
         }
-        HSLiftDebug.Info("Init v1.0.27 - a sign, call panel, and door belong to the lift they sit on; admin: hslift");
+        HSLiftDebug.Info("Init v1.0.28 - a neighbour's shared wall is not a shaft blockage; admin: hslift");
         HSLiftNet.RegisterPackage();
         ModEvents.GameStartDone.RegisterHandler(OnGameStartDone);
         ModEvents.WorldShuttingDown.RegisterHandler(OnWorldShuttingDown);

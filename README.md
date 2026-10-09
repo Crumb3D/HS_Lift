@@ -2,7 +2,7 @@
 
 Build your own passenger or vehicle elevators in **7 Days to Die**. You build the cabin or garage pad from vanilla blocks. HS Lift **moves** that structure — it does not spawn a premade car, and it will not chew through blocks in the shaft.
 
-**Version 1.0.27** — dual-load **7 Days to Die 3.2 and 3.3**. Cabin paints use free opaque atlas slots on 3.2; on 3.3 the array is enlarged by three slots.
+**Version 1.0.28** — dual-load **7 Days to Die 3.2 and 3.3**. Cabin paints use free opaque atlas slots on 3.2; on 3.3 the array is enlarged by three slots.
 
 License: [MIT](LICENSE). Author: Crumb.
 
@@ -186,6 +186,8 @@ Open an issue on the GitHub repository with the game version, what you built, an
 ---
 
 ## Changelog
+
+**1.0.28** — The other lift's shared wall is not a blockage. A car called past a parked neighbour finishes the trip and sits on the floor. Doors stay shut unless the car is actually on a landing, and a door on the shared wall stays with the lift it faces.
 
 **1.0.27** — A sign above a door follows that door's lift. A call panel beside a door (left or right; a panel in the crack belongs to the door it is on the right of) calls that lift. Only the lift that arrived opens its doors.
 

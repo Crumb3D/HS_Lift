@@ -1309,6 +1309,12 @@ public static class HSLiftCar
         return c == null || !c.IsThisMoving;
     }
 
+    // The other lift's parked car occupies this cell (shared wall). It is not a shaft blockage.
+    public static bool CellIsParkedNeighbour(Vector3i p)
+    {
+        return ParkedNeighbourAt(p) != null;
+    }
+
     // Another lift whose parked car box holds this world cell: the two cars share this wall line.
     static HSLiftConfigData ParkedNeighbourAt(Vector3i p)
     {
