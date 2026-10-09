@@ -21,7 +21,13 @@ public static class HSLiftDoorPatch
             {
                 var playerLift = HSLiftConfiguration.LiftForPlayer(_player);
                 if (playerLift != null) HSLiftConfiguration.Operate(playerLift);
-                int floor = HSLiftFloorMenu.Parse(_commandName, playerLift ?? HSLiftConfiguration.Data);
+                var liftForPage = playerLift ?? HSLiftConfiguration.Data;
+                if (HSLiftFloorMenu.TurnPage(_commandName, liftForPage, _player))
+                {
+                    __result = true;
+                    return false;
+                }
+                int floor = HSLiftFloorMenu.Parse(_commandName, liftForPage);
                 if (floor >= 0)
                 {
                     var err = HSLiftController.RequestFromDoorMenu(_player, floor);

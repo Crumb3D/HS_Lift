@@ -255,7 +255,7 @@ public static class HSLiftConfiguration
         }
         string powerProblem;
         bool powered = HSLiftPower.HasWorkingPower(d, out powerProblem);
-        string power = powered ? "Yes" : (powerProblem != null && powerProblem.IndexOf("missing", StringComparison.OrdinalIgnoreCase) >= 0 ? "Panel missing" : "No");
+        string power = powered ? (HSLiftPower.WattsFor(d) + "W") : (string.IsNullOrEmpty(powerProblem) ? "No" : powerProblem);
         var here = d.Floors != null ? d.Floors.Find(f => f != null && f.Y == d.CurrentY) : null;
         string car = !d.HasCar ? "not set" : (here != null ? FloorDisplayName(here.Name) + " (Y" + d.CurrentY + ")" : "Y" + d.CurrentY + " (not a floor)");
         var ctrl = HSLiftController.Of(d);

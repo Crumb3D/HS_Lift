@@ -506,8 +506,8 @@ public static class HSLiftSetup
         HSLiftConfiguration.ForgetPanelOnOtherLifts(d, p);
         HSLiftConfiguration.SyncFloors();
         HSLiftConfiguration.Save();
-        return "Panel registered for " + HSLiftConfiguration.FloorDisplayName(floor.Name) + ". Wired to power: " + HSLiftPower.IsPanelPowered(p)
-            + " (one powered panel runs the whole lift)";
+        string powerNote;
+        return "Panel registered for " + HSLiftConfiguration.FloorDisplayName(floor.Name) + ". " + (HSLiftPower.HasBatteryPower(HSLiftConfiguration.Data, out powerNote) ? "Battery bank is feeding this lift (" + HSLiftPower.WattsFor(HSLiftConfiguration.Data) + "W)." : powerNote);
     }
 
     static bool FindPanelNear(World world, Vector3i aimed, out Vector3i panel)

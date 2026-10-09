@@ -120,6 +120,7 @@ public class HSLiftController : MonoBehaviour
     float previewUntil;
 
     float nextShaftRoof;
+    float nextPowerDraw;
 
     public void ScheduleAutoClose()
     {
@@ -671,6 +672,11 @@ public class HSLiftController : MonoBehaviour
             }
             TickAutoClose();
             TickReopenIfBlocked();
+            if (Time.time >= nextPowerDraw)
+            {
+                nextPowerDraw = Time.time + 1f;
+                HSLiftPower.ApplyDraw(D);
+            }
             if (LiftState == HSLiftState.Idle && Time.time >= nextShaftRoof)
             {
                 nextShaftRoof = Time.time + 2f;

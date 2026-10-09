@@ -2,7 +2,7 @@ Key,File,Type,UsedInMainMenu,NoTranslate,KeepLoaded,english
 hsliftOutsidePanel,blocks,Block,,,,"Elevator Outside Button Panel"
 hsliftOutsidePanelHalfBlock,blocks,Block,,,,"Elevator Outside Button Panel (Half Block)"
 hsliftOutsidePanelTenthBlock,blocks,Block,,,,"Elevator Outside Button Panel (Tenth Block)"
-hsliftOutsidePanelDesc,blocks,Block,,,,"Place one beside the lift on each floor (at least two floors). Wire any one of them to a generator or battery bank to power the whole lift. Hold the Elevator Setup Tool, aim at the panel, hold E, and choose Register Panel. Cabin walls are plates (they ride). Sheets around the panel are pass-through."
+hsliftOutsidePanelDesc,blocks,Block,,,,"Place one beside the lift on each floor (at least two floors). Wire one to a battery bank. The lift draws 5W for every floor (12 floors is 60W) and the batteries drain while it has power. A generator or solar bank will not run it. Hold the Elevator Setup Tool, aim at the panel, hold E, and choose Register Panel."
 hsliftInsidePanel,blocks,Block,,,,"Elevator Inside Button Panel"
 hsliftInsidePanelHalfBlock,blocks,Block,,,,"Elevator Inside Button Panel (Half Block)"
 hsliftInsidePanelPlateOffset,blocks,Block,,,,"Elevator Inside Button Panel (Plate Offset)"

@@ -71,6 +71,7 @@ public class BlockHSLiftInsidePanel : Block
                 return true;
             }
             HSLiftConfiguration.Operate(lift);
+            if (HSLiftFloorMenu.TurnPage(_commandName, lift, _player)) return true;
             int floor = HSLiftFloorMenu.Parse(_commandName, lift);
             if (floor < 0) return true;
             var problem = HSLiftController.RequestFromInsidePanel(pos, floor);

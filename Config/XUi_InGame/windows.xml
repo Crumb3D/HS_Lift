@@ -1,4 +1,5 @@
 <configs>
+	<set xpath="/windows/window[@name='windowRadial']/rect[@name='radialPanel']/@repeat_count">32</set>
 	<append xpath="/windows">
 		<window name="HUDHSLift" pos="-540,110" width="528" height="188" anchor="Right" depth="15" controller="HSLiftHud, HSLift">
 			<rect width="528" height="188" visible="{show}">
