@@ -18,5 +18,11 @@
 			<property name="PaintCost" value="1"/>
 			<property name="SortIndex" value="102"/>
 		</paint>
+		<paint id="244" name="txName_HSLiftOutside">
+			<property name="TextureId" value="511"/>
+			<property name="Group" value="txGroupMetal"/>
+			<property name="PaintCost" value="1"/>
+			<property name="SortIndex" value="103"/>
+		</paint>
 	</append>
 </configs>

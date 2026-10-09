@@ -664,6 +664,8 @@ public class HSLiftController : MonoBehaviour
             Push();
             if (Bound != null && Bound.HasCar)
                 HSLiftCabinLights.Tick(Bound, LiftState == HSLiftState.Idle);
+            if (all.Count > 0 && all[0] == this)
+                HSLiftSounds.TickParked(this);
             if (releasing != null && Time.time >= releaseAt) FinishRelease();
             if (!HSLiftNet.IsAuthority)
             {
@@ -812,7 +814,8 @@ public class HSLiftController : MonoBehaviour
         try
         {
             customLoop = HSLiftSounds.StartMoveLoop(carRoot);
-            StartCoroutine(HSLiftSounds.PlayCabinMusic(carRoot, cabinTrack, src => cabinMusic = src));
+            HSLiftSounds.StopParked();
+            StartCoroutine(HSLiftSounds.PlayCabinMusic(carRoot, cabinTrack, Bound, src => cabinMusic = src));
             if (customLoop != null) return;
             var name = D.MoveLoopSound;
             var player = GameManager.Instance.World.GetPrimaryPlayer();
@@ -892,6 +895,7 @@ public class HSLiftController : MonoBehaviour
         c.StopPreviewInternal();
         c.fromY = parkedY;
         c.cells = captured;
+        HSLiftSounds.StopParked();
         c.cabinTrack = musicFile;
         var world = GameManager.Instance != null ? GameManager.Instance.World : null;
         var root = HSLiftCar.BuildVisual(world, captured, true, parkedY);

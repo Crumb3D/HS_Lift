@@ -2,7 +2,7 @@
 
 Build your own passenger or vehicle elevators in **7 Days to Die**. You build the cabin or garage pad from vanilla blocks. HS Lift **moves** that structure — it does not spawn a premade car, and it will not chew through blocks in the shaft.
 
-**Version 1.0.30** — dual-load **7 Days to Die 3.2 and 3.3**. Cabin paints use free opaque atlas slots on 3.2; on 3.3 the array is enlarged by three slots.
+**Version 1.0.31** — dual-load **7 Days to Die 3.2 and 3.3**. Cabin paints use free opaque atlas slots on 3.2; on 3.3 the array is enlarged for the Lift paints.
 
 License: [MIT](LICENSE). Author: Crumb.
 
@@ -166,8 +166,8 @@ F1 console (admin). `hslift` prints the full list. Common:
 - **Wrong lift edited** — **Use Lift Here** first.
 - **Need two shaft walls** — the cabin has to sit against the building.
 - After a new `HSLift.dll` or XML change, **restart** the game.
-- **Cabin look** — paint the cabin yourself with the **paintbrush**, Metal group: **Lift Floor**, **Lift Wall**, **Lift Ceiling**. Those paints stay on the blocks parked and moving.
-- **Cabin music** — `hslift music on|off` (host). MP3s live in `assets/music` on each machine.
+- **Cabin look** — paint the cabin yourself with the **paintbrush**, Metal group: **Lift Floor**, **Lift Wall**, **Lift Ceiling**, **Lift Outside**. Lift Wall is one continuous sheet. Lift Outside is the darker metal for the outside of the car and the shaft.
+- **Cabin music** — `hslift music on|off` (host). MP3s live in `assets/music` on each machine. Quiet while you are standing in the cabin, including when the car is parked, and on the ride. Muffled outside the car.
 
 ---
 
@@ -186,6 +186,8 @@ Open an issue on the GitHub repository with the game version, what you built, an
 ---
 
 ## Changelog
+
+**1.0.31** — Lift Wall is one continuous sheet when blocks sit together. Lift Outside is a darker metal in the same paint group, for the outside of the car and the shaft walls. Cabin music plays quietly while you are in the cabin, parked or moving. Restart the game so the brush and the music both reload.
 
 **1.0.30** — Basement buttons go through B99, and a long floor list pages instead of stopping. A lift draws 5W for every floor from a battery bank only, and the batteries drain. Not enough watts and the lift stays put until the bank can supply it.
 

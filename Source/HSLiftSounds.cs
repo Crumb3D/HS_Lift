@@ -25,23 +25,102 @@ public static class HSLiftSounds
         yield return Load("ding", c => Ding = c);
     }
 
-    public static IEnumerator PlayCabinMusic(GameObject carRoot, string trackName, Action<AudioSource> set)
+    public static IEnumerator PlayCabinMusic(GameObject carRoot, string trackName, HSLiftConfigData lift, Action<AudioSource> set)
     {
         if (carRoot == null || set == null) yield break;
         if (!HSLiftNet.IsRemoteClient) HSLiftSettings.Load();
-        if (!HSLiftSettings.Music) yield break;
+        if (!HSLiftSettings.Music) { set(null); yield break; }
         string path = ResolveMp3(trackName);
-        if (path == null) yield break;
+        if (path == null) { set(null); yield break; }
         AudioClip clip;
         if (!music.TryGetValue(path, out clip) || clip == null)
         {
             yield return LoadMp3(path, c => clip = c);
-            if (clip == null) yield break;
+            if (clip == null) { set(null); yield break; }
             music[path] = clip;
         }
-        var src = MakeMusicSource(carRoot, clip);
+        var src = MakeMusicSource(carRoot, clip, lift);
         src.Play();
         set(src);
+    }
+
+    static GameObject parkedHold;
+    static AudioSource parkedSource;
+    static string parkedFor;
+    static bool parkedLoading;
+    static float parkedRetryAt;
+
+    // Parked car has no moving copy, so the speaker sits in the cabin while the local player is standing in it.
+    public static void TickParked(MonoBehaviour host)
+    {
+        if (host == null || GameManager.IsDedicatedServer) return;
+        if (!HSLiftSettings.Music) { StopParked(); return; }
+        if (parkedHold == null && !parkedLoading && Time.time < parkedRetryAt) return;
+        var world = GameManager.Instance != null ? GameManager.Instance.World : null;
+        var player = world != null ? world.GetPrimaryPlayer() : null;
+        var lift = player != null ? ParkedCabinAt(player) : null;
+        if (lift == null) { StopParked(); return; }
+        if (parkedFor == lift.ElevatorId && parkedHold != null)
+        {
+            parkedHold.transform.position = HSLiftCar.UnityPos(lift, lift.CurrentY);
+            return;
+        }
+        if (parkedLoading && parkedFor == lift.ElevatorId) return;
+        StopParked();
+        parkedFor = lift.ElevatorId;
+        parkedLoading = true;
+        var hold = new GameObject("HSLiftParkedMusic");
+        hold.transform.position = HSLiftCar.UnityPos(lift, lift.CurrentY);
+        parkedHold = hold;
+        host.StartCoroutine(PlayCabinMusic(hold, null, lift, src =>
+        {
+            parkedLoading = false;
+            if (src == null)
+            {
+                if (parkedHold == hold)
+                {
+                    UnityEngine.Object.Destroy(hold);
+                    parkedHold = null;
+                }
+                parkedRetryAt = Time.time + 5f;
+                return;
+            }
+            if (parkedHold != hold)
+            {
+                UnityEngine.Object.Destroy(src.gameObject);
+                return;
+            }
+            parkedRetryAt = 0f;
+            parkedSource = src;
+        }));
+    }
+
+    public static void StopParked()
+    {
+        parkedLoading = false;
+        parkedFor = null;
+        parkedRetryAt = 0f;
+        parkedSource = null;
+        if (parkedHold != null) UnityEngine.Object.Destroy(parkedHold);
+        parkedHold = null;
+    }
+
+    static HSLiftConfigData ParkedCabinAt(EntityPlayer player)
+    {
+        int x = Mathf.FloorToInt(player.position.x);
+        int y = Mathf.FloorToInt(player.position.y + 0.1f);
+        int z = Mathf.FloorToInt(player.position.z);
+        foreach (var o in HSLiftConfiguration.Lifts)
+        {
+            if (o == null || !o.HasCar) continue;
+            if (x < o.MinX || x >= o.MinX + o.SizeX || z < o.MinZ || z >= o.MinZ + o.SizeZ) continue;
+            int h = Math.Max(o.IsVehicleType ? 2 : 1, o.SizeY);
+            if (y < o.CurrentY || y >= o.CurrentY + h) continue;
+            var ctrl = HSLiftController.Of(o);
+            if (ctrl != null && ctrl.IsTraveling) return null;
+            return o;
+        }
+        return null;
     }
 
     public static string ChooseTrack()
@@ -142,32 +221,36 @@ public static class HSLiftSounds
         }
     }
 
-    static AudioSource MakeMusicSource(GameObject carRoot, AudioClip clip)
+    static AudioSource MakeMusicSource(GameObject carRoot, AudioClip clip, HSLiftConfigData lift)
     {
+        if (lift == null) lift = D;
+        int sx = lift != null ? Mathf.Max(1, lift.SizeX) : 1;
+        int sy = lift != null ? Mathf.Max(1, lift.SizeY) : 1;
+        int sz = lift != null ? Mathf.Max(1, lift.SizeZ) : 1;
         var hold = new GameObject("HSLiftCabinMusic");
         hold.transform.SetParent(carRoot.transform, false);
-        float y = D.SizeY <= 1 ? 0.55f : Mathf.Clamp(D.SizeY * 0.45f, 0.7f, D.SizeY - 0.3f);
-        hold.transform.localPosition = new Vector3(D.SizeX * 0.5f, y, D.SizeZ * 0.5f);
+        float y = sy <= 1 ? 0.55f : Mathf.Clamp(sy * 0.45f, 0.7f, sy - 0.3f);
+        hold.transform.localPosition = new Vector3(sx * 0.5f, y, sz * 0.5f);
         var src = hold.AddComponent<AudioSource>();
         src.clip = clip;
         src.loop = true;
         src.playOnAwake = false;
-        src.spatialBlend = 1f;
-        src.spatialize = true;
+        src.spatialBlend = 0f;
+        src.spatialize = false;
         src.dopplerLevel = 0f;
-        src.spread = 70f;
+        src.spread = 0f;
         src.rolloffMode = AudioRolloffMode.Linear;
-        src.minDistance = 0.7f;
-        src.maxDistance = 7f;
-        src.priority = 64;
-        src.volume = 0.16f;
+        src.minDistance = 1.5f;
+        src.maxDistance = 8f;
+        src.priority = 32;
+        src.volume = 0.34f;
         var lp = hold.AddComponent<AudioLowPassFilter>();
-        lp.cutoffFrequency = 900f;
+        lp.cutoffFrequency = 6500f;
         var ride = hold.AddComponent<HSLiftCabinMusicRide>();
         ride.Src = src;
         ride.Lp = lp;
         ride.Car = carRoot.transform;
-        ride.CabinSize = new Vector3(Mathf.Max(1, D.SizeX), Mathf.Max(1, D.SizeY), Mathf.Max(1, D.SizeZ));
+        ride.CabinSize = new Vector3(sx, sy, sz);
         return src;
     }
 
@@ -217,13 +300,15 @@ public class HSLiftCabinMusicRide : MonoBehaviour
         bool inside = LocalPlayerInCabin();
         if (inside)
         {
-            Src.volume = 0.14f;
-            if (Lp != null) Lp.cutoffFrequency = 5200f;
+            Src.spatialBlend = 0f;
+            Src.volume = 0.34f;
+            if (Lp != null) Lp.cutoffFrequency = 6500f;
         }
         else
         {
-            Src.volume = 0.045f;
-            if (Lp != null) Lp.cutoffFrequency = 550f;
+            Src.spatialBlend = 1f;
+            Src.volume = 0.07f;
+            if (Lp != null) Lp.cutoffFrequency = 700f;
         }
     }
 
@@ -234,7 +319,8 @@ public class HSLiftCabinMusicRide : MonoBehaviour
             var world = GameManager.Instance != null ? GameManager.Instance.World : null;
             var p = world != null ? world.GetPrimaryPlayer() : null;
             if (p == null) return false;
-            var lp = Car.InverseTransformPoint(p.position);
+            // Player position is world blocks. The car copy is in Unity space (world minus Origin).
+            var lp = Car.InverseTransformPoint(p.position - Origin.position);
             const float pad = 0.15f;
             return lp.x >= pad && lp.x <= CabinSize.x - pad
                 && lp.y >= -0.25f && lp.y <= CabinSize.y + 0.4f

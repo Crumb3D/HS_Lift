@@ -42,6 +42,7 @@ hsliftHandbookText,items,Item,,,,"YOU BUILD THE CAR. THE MOD ONLY MOVES IT. It w
 txName_HSLiftFloor,painting,txGroupMetal,,,,"Lift Floor"
 txName_HSLiftWall,painting,txGroupMetal,,,,"Lift Wall"
 txName_HSLiftCeiling,painting,txGroupMetal,,,,"Lift Ceiling"
+txName_HSLiftOutside,painting,txGroupMetal,,,,"Lift Outside"
 hsliftChallengeCategory,challenges,Challenge,,,,"HS Lift"
 hsliftChallengeGroup,challenges,Challenge,,,,"Build a lift"
 hsliftHintRead,challenges,Challenge,,,,"Craft the Elevator Handbook from 1 paper, then use it to read."

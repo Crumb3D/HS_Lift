@@ -4,20 +4,21 @@ using System.IO;
 using HarmonyLib;
 using UnityEngine;
 
-// Puts cabin PNGs on unused opaque atlas slots. Paintbrush Metal group: Lift Floor / Wall / Ceiling.
+// Puts cabin PNGs on unused opaque atlas slots. Paintbrush Metal group: Lift Floor / Wall / Ceiling / Outside.
 // A paint's TextureId is a uvMapping id, not an array slot: uvMapping[id].index is the slot.
 // New ids go past the end of uvMapping; slots are only ones no uvMapping entry uses.
-// No free slot (3.3 packs its array to fit) = the arrays are copied GPU-side into 3 bigger ones.
-// If that fails the three paints are hidden.
+// No free slot (3.3 packs its array to fit) = the arrays are copied GPU-side into bigger ones.
+// If that fails the paints are hidden.
 [HarmonyPatch(typeof(TextureAtlasBlocks), "LoadTextureAtlas")]
 public static class HSLiftAtlasPatch
 {
     public static int FloorId = 508;
     public static int WallId = 509;
     public static int CeilingId = 510;
+    public static int OutsideId = 511;
     public static bool Available;
     const int SilverId = 267;
-    static readonly string[] Names = { "hs_lift_floor", "hs_lift_wall", "hs_lift_ceiling" };
+    static readonly string[] Names = { "hs_lift_floor", "hs_lift_wall", "hs_lift_ceiling", "hs_lift_outside" };
 
     static void Postfix(TextureAtlasBlocks __instance, int _idx)
     {
@@ -30,7 +31,7 @@ public static class HSLiftAtlasPatch
             var arr = __instance.diffuseTexture as Texture2DArray;
             if (arr == null)
             {
-                HSLiftDebug.Warn("Opaque atlas is not a Texture2DArray; Lift Floor/Wall/Ceiling paints are hidden.");
+                HSLiftDebug.Warn("Opaque atlas is not a Texture2DArray; Lift paints are hidden.");
                 BindPaintIds();
                 return;
             }
@@ -38,15 +39,15 @@ public static class HSLiftAtlasPatch
             if (!PickSlots(__instance, arr.depth, out ids, out slots))
             {
                 int vanillaDepth = arr.depth;
-                if (!GrowArrays(__instance, 3))
+                if (!GrowArrays(__instance, Names.Length))
                 {
-                    HSLiftDebug.Warn("No free slot in the block texture array (" + vanillaDepth + " slots, all used by vanilla) and it could not be enlarged. Lift Floor/Wall/Ceiling paints are hidden.");
+                    HSLiftDebug.Warn("No free slot in the block texture array (" + vanillaDepth + " slots, all used by vanilla) and it could not be enlarged. Lift paints are hidden.");
                     BindPaintIds();
                     return;
                 }
                 arr = (Texture2DArray)__instance.diffuseTexture;
                 var map = __instance.uvMapping ?? new UVRectTiling[0];
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < Names.Length; i++)
                 {
                     slots[i] = vanillaDepth + i;
                     ids[i] = map.Length + i;
@@ -56,12 +57,13 @@ public static class HSLiftAtlasPatch
             FloorId = ids[0];
             WallId = ids[1];
             CeilingId = ids[2];
+            OutsideId = ids[3];
             bool ok = true;
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < Names.Length; i++)
                 ok &= Install(__instance, arr, ids[i], slots[i], Names[i] + ".png", Names[i]);
             Available = ok;
-            HSLiftDebug.Info("Cabin paints " + (ok ? "ready" : "FAILED") + ": ids " + FloorId + "/" + WallId + "/" + CeilingId
-                + " on slots " + slots[0] + "/" + slots[1] + "/" + slots[2] + " (atlas " + arr.depth + " slots, " + arr.format + ")");
+            HSLiftDebug.Info("Cabin paints " + (ok ? "ready" : "FAILED") + ": ids " + FloorId + "/" + WallId + "/" + CeilingId + "/" + OutsideId
+                + " on slots " + slots[0] + "/" + slots[1] + "/" + slots[2] + "/" + slots[3] + " (atlas " + arr.depth + " slots, " + arr.format + ")");
             BindPaintIds();
         }
         catch (Exception e)
@@ -75,11 +77,11 @@ public static class HSLiftAtlasPatch
     // Reuses our own entries on a texture-quality reload; otherwise new ids past the end of uvMapping.
     static bool PickSlots(TextureAtlasBlocks atlas, int depth, out int[] ids, out int[] slots)
     {
-        ids = new int[3];
-        slots = new int[3];
+        ids = new int[Names.Length];
+        slots = new int[Names.Length];
         var map = atlas.uvMapping ?? new UVRectTiling[0];
         bool reuse = true;
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < Names.Length; i++)
         {
             ids[i] = FindByName(map, Names[i]);
             if (ids[i] < 0 || map[ids[i]].index <= 0 || map[ids[i]].index >= depth) { reuse = false; break; }
@@ -95,10 +97,10 @@ public static class HSLiftAtlasPatch
             for (int k = 0; k < n; k++) used.Add(map[i].index + k);
         }
         int found = 0;
-        for (int s = depth - 1; s > 0 && found < 3; s--)
+        for (int s = depth - 1; s > 0 && found < Names.Length; s--)
             if (!used.Contains(s)) slots[found++] = s;
-        if (found < 3) return false;
-        for (int i = 0; i < 3; i++) ids[i] = map.Length + i;
+        if (found < Names.Length) return false;
+        for (int i = 0; i < Names.Length; i++) ids[i] = map.Length + i;
         return true;
     }
 
@@ -193,6 +195,7 @@ public static class HSLiftAtlasPatch
         if (n == "txName_HSLiftFloor") id = FloorId;
         else if (n == "txName_HSLiftWall") id = WallId;
         else if (n == "txName_HSLiftCeiling") id = CeilingId;
+        else if (n == "txName_HSLiftOutside") id = OutsideId;
         else return;
         // Creative still lists hidden paints; plain silver beats a random vanilla texture.
         paint.TextureID = (ushort)(Available ? id : SilverId);
