@@ -365,6 +365,16 @@ public static class HSLiftDoors
         return n;
     }
 
+    public static bool AnyOpenFor(World world, HSLiftConfigData lift)
+    {
+        if (world == null || lift == null || !lift.HasCar) return false;
+        var prev = HSLiftConfiguration.Data;
+        HSLiftConfiguration.Operate(lift);
+        bool open = AnyOpenAtCar(world);
+        if (prev != null) HSLiftConfiguration.Operate(prev);
+        return open;
+    }
+
     public static bool AnyOpenAtCar(World world)
     {
         if (world == null || !D.HasCar) return false;

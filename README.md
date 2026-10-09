@@ -2,7 +2,7 @@
 
 Build your own passenger or vehicle elevators in **7 Days to Die**. You build the cabin or garage pad from vanilla blocks. HS Lift **moves** that structure — it does not spawn a premade car, and it will not chew through blocks in the shaft.
 
-**Version 1.0.31** — dual-load **7 Days to Die 3.2 and 3.3**. Cabin paints use free opaque atlas slots on 3.2; on 3.3 the array is enlarged for the Lift paints.
+**Version 1.0.32** — dual-load **7 Days to Die 3.2 and 3.3**. Cabin paints use free opaque atlas slots on 3.2; on 3.3 the array is enlarged for the Lift paints.
 
 License: [MIT](LICENSE). Author: Crumb.
 
@@ -167,7 +167,7 @@ F1 console (admin). `hslift` prints the full list. Common:
 - **Need two shaft walls** — the cabin has to sit against the building.
 - After a new `HSLift.dll` or XML change, **restart** the game.
 - **Cabin look** — paint the cabin yourself with the **paintbrush**, Metal group: **Lift Floor**, **Lift Wall**, **Lift Ceiling**, **Lift Outside**. Lift Wall is one continuous sheet. Lift Outside is the darker metal for the outside of the car and the shaft.
-- **Cabin music** — `hslift music on|off` (host). MP3s live in `assets/music` on each machine. Quiet while you are standing in the cabin, including when the car is parked, and on the ride. Muffled outside the car.
+- **Cabin music** — `hslift music on|off` (host). MP3s live in `assets/music` on each machine. It loops from a speaker inside the car. Quiet background in the cabin. Open doors let a muffled version out that gets clearer as you walk in. It does not stop when you step out.
 
 ---
 
@@ -186,6 +186,8 @@ Open an issue on the GitHub repository with the game version, what you built, an
 ---
 
 ## Changelog
+
+**1.0.32** — Cabin music stays looping inside the car. It is background volume, not a stereo in your ears. Open doors let it out muffled, and it fades up as you come in. Stepping out does not cut it off.
 
 **1.0.31** — Lift Wall is one continuous sheet when blocks sit together. Lift Outside is a darker metal in the same paint group, for the outside of the car and the shaft walls. Cabin music plays quietly while you are in the cabin, parked or moving. Restart the game so the brush and the music both reload.
 

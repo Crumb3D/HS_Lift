@@ -23,7 +23,7 @@ public class HSLiftMod : IModApi
         {
             HSLiftDebug.Error("Could not move lift save out of the mod folder", e);
         }
-        HSLiftDebug.Info("Init v1.0.31 - seamless Lift Wall, Lift Outside paint, cabin music while you stand in the car; admin: hslift");
+        HSLiftDebug.Info("Init v1.0.32 - cabin music stays in the car, quieter, muffled through open doors; admin: hslift");
         HSLiftNet.RegisterPackage();
         ModEvents.GameStartDone.RegisterHandler(OnGameStartDone);
         ModEvents.WorldShuttingDown.RegisterHandler(OnWorldShuttingDown);

@@ -50,7 +50,7 @@ public static class HSLiftSounds
     static bool parkedLoading;
     static float parkedRetryAt;
 
-    // Parked car has no moving copy, so the speaker sits in the cabin while the local player is standing in it.
+    // The speaker stays in the parked car. Stepping out does not stop it; distance and the doors do.
     public static void TickParked(MonoBehaviour host)
     {
         if (host == null || GameManager.IsDedicatedServer) return;
@@ -58,7 +58,7 @@ public static class HSLiftSounds
         if (parkedHold == null && !parkedLoading && Time.time < parkedRetryAt) return;
         var world = GameManager.Instance != null ? GameManager.Instance.World : null;
         var player = world != null ? world.GetPrimaryPlayer() : null;
-        var lift = player != null ? ParkedCabinAt(player) : null;
+        var lift = player != null ? NearParked(player) : null;
         if (lift == null) { StopParked(); return; }
         if (parkedFor == lift.ElevatorId && parkedHold != null)
         {
@@ -105,22 +105,23 @@ public static class HSLiftSounds
         parkedHold = null;
     }
 
-    static HSLiftConfigData ParkedCabinAt(EntityPlayer player)
+    static HSLiftConfigData NearParked(EntityPlayer player)
     {
-        int x = Mathf.FloorToInt(player.position.x);
-        int y = Mathf.FloorToInt(player.position.y + 0.1f);
-        int z = Mathf.FloorToInt(player.position.z);
+        var p = player.position;
+        HSLiftConfigData best = null;
+        float bestD = 16f * 16f;
         foreach (var o in HSLiftConfiguration.Lifts)
         {
             if (o == null || !o.HasCar) continue;
-            if (x < o.MinX || x >= o.MinX + o.SizeX || z < o.MinZ || z >= o.MinZ + o.SizeZ) continue;
-            int h = Math.Max(o.IsVehicleType ? 2 : 1, o.SizeY);
-            if (y < o.CurrentY || y >= o.CurrentY + h) continue;
             var ctrl = HSLiftController.Of(o);
-            if (ctrl != null && ctrl.IsTraveling) return null;
-            return o;
+            if (ctrl != null && ctrl.IsTraveling) continue;
+            float dx = p.x - (o.MinX + o.SizeX * 0.5f);
+            float dy = p.y - (o.CurrentY + Mathf.Max(1, o.SizeY) * 0.45f);
+            float dz = p.z - (o.MinZ + o.SizeZ * 0.5f);
+            float d2 = dx * dx + dy * dy + dz * dz;
+            if (d2 < bestD) { bestD = d2; best = o; }
         }
-        return null;
+        return best;
     }
 
     public static string ChooseTrack()
@@ -235,21 +236,23 @@ public static class HSLiftSounds
         src.clip = clip;
         src.loop = true;
         src.playOnAwake = false;
-        src.spatialBlend = 0f;
+        float reach = 0.5f * Mathf.Sqrt(sx * sx + sz * sz);
+        src.spatialBlend = 1f;
         src.spatialize = false;
         src.dopplerLevel = 0f;
-        src.spread = 0f;
+        src.spread = 40f;
         src.rolloffMode = AudioRolloffMode.Linear;
-        src.minDistance = 1.5f;
-        src.maxDistance = 8f;
-        src.priority = 32;
-        src.volume = 0.34f;
+        src.minDistance = reach + 0.5f;
+        src.maxDistance = reach + 12f;
+        src.priority = 80;
+        src.volume = 0.03f;
         var lp = hold.AddComponent<AudioLowPassFilter>();
-        lp.cutoffFrequency = 6500f;
+        lp.cutoffFrequency = 700f;
         var ride = hold.AddComponent<HSLiftCabinMusicRide>();
         ride.Src = src;
         ride.Lp = lp;
         ride.Car = carRoot.transform;
+        ride.Lift = lift;
         ride.CabinSize = new Vector3(sx, sy, sz);
         return src;
     }
@@ -286,46 +289,54 @@ public static class HSLiftSounds
     }
 }
 
-// Speaker in the moving cabin. Quiet inside; muffled and quieter outside a closed car.
+// Speaker stays in the car and loops. Inside it is quiet background. Open doors let a muffled version out, which fades up as you come in.
 public class HSLiftCabinMusicRide : MonoBehaviour
 {
+    public const float InsideVol = 0.11f;
+
     public AudioSource Src;
     public AudioLowPassFilter Lp;
     public Transform Car;
+    public HSLiftConfigData Lift;
     public Vector3 CabinSize;
+    float nextDoor;
+    bool doorsOpen;
 
     void LateUpdate()
     {
         if (Src == null || Car == null) return;
-        bool inside = LocalPlayerInCabin();
-        if (inside)
+        Src.spatialBlend = 1f;
+        if (Time.time >= nextDoor)
         {
-            Src.spatialBlend = 0f;
-            Src.volume = 0.34f;
-            if (Lp != null) Lp.cutoffFrequency = 6500f;
+            nextDoor = Time.time + 0.3f;
+            var world = GameManager.Instance != null ? GameManager.Instance.World : null;
+            doorsOpen = HSLiftDoors.AnyOpenFor(world, Lift);
         }
-        else
-        {
-            Src.spatialBlend = 1f;
-            Src.volume = 0.07f;
-            if (Lp != null) Lp.cutoffFrequency = 700f;
-        }
+        float outside = OutsideMeters();
+        bool inside = outside < 0.2f;
+        float open = doorsOpen ? 1f : 0f;
+        float reach = Mathf.Lerp(4f, 11f, open);
+        float proximity = inside ? 1f : Mathf.Clamp01(1f - outside / reach);
+        float loud = inside ? 1f : proximity * Mathf.Lerp(0.18f, 0.55f, open);
+        float targetVol = InsideVol * loud;
+        float targetHz = inside ? 4200f : Mathf.Lerp(480f, 1900f, proximity * Mathf.Lerp(0.35f, 1f, open));
+        Src.volume = Mathf.MoveTowards(Src.volume, targetVol, Time.deltaTime * 0.08f);
+        if (Lp != null) Lp.cutoffFrequency = Mathf.MoveTowards(Lp.cutoffFrequency, targetHz, Time.deltaTime * 2200f);
     }
 
-    bool LocalPlayerInCabin()
+    float OutsideMeters()
     {
         try
         {
             var world = GameManager.Instance != null ? GameManager.Instance.World : null;
             var p = world != null ? world.GetPrimaryPlayer() : null;
-            if (p == null) return false;
-            // Player position is world blocks. The car copy is in Unity space (world minus Origin).
+            if (p == null) return 30f;
             var lp = Car.InverseTransformPoint(p.position - Origin.position);
-            const float pad = 0.15f;
-            return lp.x >= pad && lp.x <= CabinSize.x - pad
-                && lp.y >= -0.25f && lp.y <= CabinSize.y + 0.4f
-                && lp.z >= pad && lp.z <= CabinSize.z - pad;
+            float dx = lp.x < 0f ? -lp.x : (lp.x > CabinSize.x ? lp.x - CabinSize.x : 0f);
+            float dy = lp.y < -0.2f ? -0.2f - lp.y : (lp.y > CabinSize.y ? lp.y - CabinSize.y : 0f);
+            float dz = lp.z < 0f ? -lp.z : (lp.z > CabinSize.z ? lp.z - CabinSize.z : 0f);
+            return Mathf.Sqrt(dx * dx + dy * dy + dz * dz);
         }
-        catch { return false; }
+        catch { return 30f; }
     }
 }
