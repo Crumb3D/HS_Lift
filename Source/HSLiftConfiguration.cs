@@ -235,12 +235,38 @@ public static class HSLiftConfiguration
     public static string HoldingHud()
     {
         var d = ById(ActiveId);
-        if (d == null) return "No lift";
-        int corners = (d.Corner1 != null ? 1 : 0) + (d.Corner2 != null ? 1 : 0);
-        var corner = d.HasCar ? "Corners set" : "Corners " + corners + " of 2";
+        int total = Lifts != null ? Lifts.Count : 0;
+        if (d == null) return "Active Lift: none - Total Lifts: " + total;
         int floors = d.Floors != null ? d.Floors.Count : 0;
         int panels = d.Panels != null ? d.Panels.Count : 0;
-        return d.ElevatorId + "\n" + Lifts.Count + " lifts\n" + corner + "\nFloors " + floors + "\nPanels " + panels;
+        int needing = 0;
+        if (d.Floors != null)
+            foreach (var f in d.Floors)
+                if (f != null && (d.Panels == null || !d.Panels.Exists(p => p != null && string.Equals(p.Stop, f.Name, StringComparison.OrdinalIgnoreCase))))
+                    needing++;
+        string cabin;
+        if (d.HasCar) cabin = "Yes (" + d.SizeX + "x" + d.SizeY + "x" + d.SizeZ + ")";
+        else
+        {
+            int corners = (d.Corner1 != null ? 1 : 0) + (d.Corner2 != null ? 1 : 0);
+            cabin = "No (" + corners + " of 2 corners)";
+        }
+        string powerProblem;
+        bool powered = HSLiftPower.HasWorkingPower(d, out powerProblem);
+        string power = powered ? "Yes" : (powerProblem != null && powerProblem.IndexOf("missing", StringComparison.OrdinalIgnoreCase) >= 0 ? "Panel missing" : "No");
+        var here = d.Floors != null ? d.Floors.Find(f => f != null && f.Y == d.CurrentY) : null;
+        string car = !d.HasCar ? "not set" : (here != null ? FloorDisplayName(here.Name) + " (Y" + d.CurrentY + ")" : "Y" + d.CurrentY + " (not a floor)");
+        var ctrl = HSLiftController.Of(d);
+        string state = ctrl != null && ctrl.IsThisMoving ? "Moving" : "Parked";
+        var setLabel = d.IsVehicleType ? "Platform Set" : "Cabin Set";
+        return "Active Lift: " + d.ElevatorId + " - Total Lifts: " + total
+            + "\n" + setLabel + ": " + cabin
+            + "\nFloors: " + floors
+            + "\nPanels: " + panels
+            + "\nFloors Needing Panels: " + needing
+            + "\nPower: " + power
+            + "\nCar: " + car
+            + "\nState: " + state;
     }
 
     static HSLiftFile MakeFile()

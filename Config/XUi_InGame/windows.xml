@@ -1,9 +1,9 @@
 <configs>
 	<append xpath="/windows">
-		<window name="HUDHSLift" pos="160,30" width="160" height="104" anchor="Center" depth="15" controller="HSLiftHud, HSLift">
-			<rect width="160" height="104" visible="{show}">
-				<sprite depth="1" pos="0,0" width="160" height="104" sprite="menu_empty" color="0,0,0,150" type="sliced"/>
-				<label depth="2" pos="8,-6" width="144" height="92" font_size="14" justify="left" upper_case="false" color="255,255,255,230" text="{info}"/>
+		<window name="HUDHSLift" pos="-430,110" width="418" height="188" anchor="Right" depth="15" controller="HSLiftHud, HSLift">
+			<rect width="418" height="188" visible="{show}">
+				<sprite depth="1" pos="0,0" width="418" height="188" sprite="menu_empty" color="0,0,0,150" type="sliced"/>
+				<label depth="2" pos="10,-8" width="398" height="172" font_size="15" justify="left" upper_case="false" color="255,255,255,230" text="{info}"/>
 			</rect>
 		</window>
 	</append>
