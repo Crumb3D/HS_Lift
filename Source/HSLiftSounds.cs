@@ -266,8 +266,26 @@ public static class HSLiftSounds
         src.rolloffMode = AudioRolloffMode.Linear;
         src.minDistance = 3f;
         src.maxDistance = 30f;
-        src.volume = Mathf.Clamp01(D.CustomSoundVolume);
+        src.volume = Mathf.Clamp01(D.CustomSoundVolume) / 3f;
         return src;
+    }
+
+    // The vanilla move loop is played in the player's head at full volume. Keep a third of it.
+    public static void PlayQuietHeadLoop(string name, EntityPlayer player)
+    {
+        if (player == null || string.IsNullOrEmpty(name)) return;
+        var before = new HashSet<AudioSource>();
+        var existing = player.GetComponentsInChildren<AudioSource>(true);
+        for (int i = 0; i < existing.Length; i++)
+            if (existing[i] != null) before.Add(existing[i]);
+        Audio.Manager.PlayInsidePlayerHead(name, player.entityId, 0f, true, true);
+        var after = player.GetComponentsInChildren<AudioSource>(true);
+        for (int i = 0; i < after.Length; i++)
+        {
+            var src = after[i];
+            if (src == null || before.Contains(src)) continue;
+            src.volume /= 3f;
+        }
     }
 
     public static AudioSource StartMoveLoop(GameObject carRoot)

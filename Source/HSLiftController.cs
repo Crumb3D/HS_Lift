@@ -824,7 +824,7 @@ public class HSLiftController : MonoBehaviour
             var name = D.MoveLoopSound;
             var player = GameManager.Instance.World.GetPrimaryPlayer();
             if (string.IsNullOrEmpty(name) || player == null) return;
-            Audio.Manager.PlayInsidePlayerHead(name, player.entityId, 0f, true, true);
+            HSLiftSounds.PlayQuietHeadLoop(name, player);
             loopPlaying = name;
         }
         catch (Exception e)
