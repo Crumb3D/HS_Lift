@@ -17,8 +17,7 @@
 			<property name="Group" value="Science,TCScience"/>
 			<property name="FilterTags" value="MC_playerBlocks,SC_electrical"/>
 			<property class="Action0">
-				<property name="Class" value="Eat"/>
-				<property name="Consume" value="false"/>
+				<property name="Class" value="ItemActionHSLiftHandbook, HSLift"/>
 				<property name="Delay" value="0.5"/>
 				<property name="UseAnimation" value="false"/>
 				<property name="Sound_start" value="read_mod"/>

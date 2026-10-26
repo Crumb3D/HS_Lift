@@ -187,6 +187,10 @@ Open an issue on the GitHub repository with the game version, what you built, an
 
 ## Changelog
 
+See [CHANGELOG.md](CHANGELOG.md). Newest first.
+
+**1.0.35** — Two floors: press E to go up or down. More than two floors: hold E and pick a floor. A tap does nothing when there are more than two. The handbook opens in a large scrolling window.
+
 **1.0.34** — The lift's ride sound is about a third as loud.
 
 **1.0.33** — A floor sign inside the cabin shows the floor the car is on, and the floor it is passing while it moves. It no longer sticks on G or goes blank on the way.

@@ -110,6 +110,8 @@
     <Compile Include="HSLiftSettings.cs" />
     <Compile Include="HSLiftFloorMenu.cs" />
     <Compile Include="HSLiftHud.cs" />
+    <Compile Include="HSLiftHandbookWindow.cs" />
+    <Compile Include="ItemActionHSLiftHandbook.cs" />
     <Compile Include="HSLiftActivation.cs" />
     <Compile Include="HSLiftPaint.cs" />
     <Compile Include="HSLiftAtlas.cs" />
@@ -118,6 +120,7 @@
     <Compile Include="Patches\HSLiftLightPatch.cs" />
     <Compile Include="Patches\HSLiftDoorPatch.cs" />
     <Compile Include="Patches\HSLiftToolPatch.cs" />
+    <Compile Include="Patches\HSLiftRadialPatch.cs" />
     <Compile Include="Blocks\BlockHSLiftOutsidePanel.cs" />
     <Compile Include="Blocks\BlockHSLiftInsidePanel.cs" />
   </ItemGroup>

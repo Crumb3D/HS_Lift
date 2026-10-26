@@ -35,7 +35,7 @@ public class BlockHSLiftInsidePanel : Block
             if (ctrl != null && ctrl.IsThisMoving) return Localization.Get("hsliftBusy");
             var notReady = BlockHSLiftOutsidePanel.NotReadyText(lift);
             if (notReady != null) return notReady;
-            return HSLiftFloorMenu.Prompt();
+            return HSLiftFloorMenu.Prompt(lift);
         }
         catch (Exception e)
         {
@@ -50,7 +50,7 @@ public class BlockHSLiftInsidePanel : Block
         HSLiftPanelCollider.Ensure(_ebcd, _blockPos);
     }
 
-    // Tap E does nothing. Hold E opens the floor list (command overload below).
+    // Two floors: the radial fires the other floor on a tap. More than two: a tap is ignored.
     public override bool OnBlockActivated(WorldBase _world, Vector3i _blockPos, BlockValue _blockValue, EntityPlayerLocal _player)
     {
         return true;

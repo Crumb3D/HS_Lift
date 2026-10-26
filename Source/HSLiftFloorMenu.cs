@@ -18,15 +18,20 @@ public static class HSLiftFloorMenu
         if (d == null || d.Floors == null) return list;
         var ctrl = HSLiftController.Of(d);
         var moving = ctrl != null && ctrl.IsThisMoving;
-        // A quick tap of E runs the first enabled entry, so with 3+ floors the floor the car is at goes
-        // first and only opens the doors; the player has to hold E and pick where to go.
+        // Two floors: the only enabled entry is the other floor, so a tap of E goes there.
+        // More than two: this list is the hold-E wheel. A tap is thrown away by the radial patch.
+        if (d.Floors.Count == 2)
+        {
+            int other = OtherFloorIndex(d);
+            if (other >= 0)
+                list.Add(Command(d.Floors[other], other, false, !moving));
+            return list;
+        }
         int hereIndex = d.Floors.FindIndex(f => f.Y == d.CurrentY);
-        bool hereFirst = d.Floors.Count > 2 && !moving && hereIndex >= 0;
         var order = new List<int>();
-        if (hereFirst) order.Add(hereIndex);
         for (int i = d.Floors.Count - 1; i >= 0; i--)
         {
-            if (hereFirst && i == hereIndex) continue;
+            if (i == hereIndex) continue;
             order.Add(i);
         }
         const int Wheel = 30;
@@ -106,17 +111,23 @@ public static class HSLiftFloorMenu
         return problem != null && problem.StartsWith("already at ", StringComparison.Ordinal);
     }
 
-    public static int OtherFloorIndex()
+    public static int OtherFloorIndex(HSLiftConfigData d)
     {
-        var d = HSLiftConfiguration.Data;
         if (d == null || d.Floors == null || d.Floors.Count != 2) return -1;
         if (d.Floors[0].Y == d.CurrentY) return 1;
         if (d.Floors[1].Y == d.CurrentY) return 0;
         return d.CurrentY < d.Floors[1].Y ? 1 : 0;
     }
 
-    public static string Prompt()
+    public static string Prompt(HSLiftConfigData d)
     {
+        if (d != null && d.Floors != null && d.Floors.Count == 2)
+        {
+            int other = OtherFloorIndex(d);
+            if (other >= 0 && d.Floors[other].Y < d.CurrentY)
+                return Localization.Get("hsliftGoDown");
+            return Localization.Get("hsliftGoUp");
+        }
         return Localization.Get("hsliftChooseFloor");
     }
 
