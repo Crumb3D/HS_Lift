@@ -3,13 +3,15 @@ using System;
 // 3.2 API: Constants.cVersionInformation (Major 3, Minor 20 = 3.2; Minor 30 = 3.3).
 public static class HSGameVersion
 {
-    public static readonly string[] Supported = { "3.0", "3.1", "3.2", "3.3" };
+    // 3.4 zur Liste der unterstützten Versionen hinzugefügt
+    public static readonly string[] Supported = { "3.0", "3.1", "3.2", "3.3", "3.4" };
 
     public static string Current { get; private set; }
 
+    // Version 3.4 nutzt dieselbe Mesh/Netzwerk-Basis wie 3.3
     public static bool Is33
     {
-        get { return Current == "3.3"; }
+        get { return Current == "3.3" || Current == "3.4"; }
     }
 
     public static bool AllowLoad(string logPrefix)
@@ -39,7 +41,7 @@ public static class HSGameVersion
         }
         Log.Out(logPrefix + " 7DTD " + game + " (" + detail + ") is on the supported list: "
             + string.Join(", ", Supported) + "."
-            + (Is33 ? " Using 3.3 CreateMesh/emitted net packages." : " Using 3.2 CloneModel/GetLength."));
+            + (Is33 ? " Using 3.3/3.4 CreateMesh/emitted net packages." : " Using 3.2 CloneModel/GetLength."));
         return true;
     }
 
