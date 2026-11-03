@@ -324,35 +324,39 @@ public abstract class NetPackageHSLiftCore : NetPackage
     public override void write(PooledBinaryWriter bw)
     {
         base.write(bw);
-        bw.Write(kind);
-        bw.Write(text ?? "");
-        bw.Write(arg ?? "");
-        bw.Write(extra ?? "");
-        bw.Write(liftId ?? "");
-        bw.Write(floorIndex);
-        bw.Write(targetY);
-        bw.Write(hasPos);
-        bw.Write(pos.x);
-        bw.Write(pos.y);
-        bw.Write(pos.z);
-        bw.Write(flag);
-        bw.Write(curY);
+        // Wir casten den PooledBinaryWriter auf sein Interface oder nutzen den internen Stream, 
+        // um die alten .Write()-Erweiterungsmethoden des Spiels anzusprechen.
+        System.IO.BinaryWriter w = (System.IO.BinaryWriter)bw;
+
+        w.Write(kind);
+        w.Write(text ?? "");
+        w.Write(arg ?? "");
+        w.Write(extra ?? "");
+        w.Write(liftId ?? "");
+        w.Write(floorIndex);
+        w.Write(targetY);
+        w.Write(hasPos);
+        w.Write(pos.x);
+        w.Write(pos.y);
+        w.Write(pos.z);
+        w.Write(flag);
+        w.Write(curY);
         int n = cells != null ? cells.Count : 0;
-        bw.Write(n);
+        w.Write(n);
         int texN = n > 0 ? HSLiftCar.NetTexChannels : 0;
-        bw.Write(texN);
+        w.Write(texN);
         if (n == 0) return;
         for (int i = 0; i < n; i++)
         {
             var c = cells[i];
-            bw.Write(c.Dx);
-            bw.Write(c.Dy);
-            bw.Write(c.Dz);
-            bw.Write(c.Bv.rawData);
-            bw.Write(c.Bv.damage);
-            bw.Write(c.Density);
+            w.Write(c.Dx);
+            w.Write(c.Dy);
+            w.Write(c.Dz);
+            w.Write(c.Bv.rawData);
+            w.Write(c.Bv.damage);
+            w.Write(c.Density);
             for (int t = 0; t < texN; t++)
-                bw.Write(c.Tex[t]);
+                w.Write(c.Tex[t]);
         }
     }
 
