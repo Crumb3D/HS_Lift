@@ -21,7 +21,8 @@ public static class HSGameApi
 
     static Transform CloneBlockModel32(ItemClass ic, World world, BlockValue bv, Vector3 worldPos, Transform parent, TextureFullArray tex)
     {
-        return ic.CloneModel(world, bv.ToItemValue(), worldPos, parent, _textureFullArray: tex);
+        var handle = ic.CloneModel(bv.ToItemValue(), parent);
+        return handle.Instance != null ? handle.Instance.transform : null;
     }
 
     static Transform CloneBlockModel33(World world, BlockValue bv, Vector3 worldPos, Transform parent, TextureFullArray tex)
