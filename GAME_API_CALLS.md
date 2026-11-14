@@ -2,7 +2,7 @@
 
 Not extracted from the game DLL. This is `HS_Lift/Source`. Unity / System / Harmony / our types skipped.
 
-3.2 vs 3.3: `7DaysRef/HS_Lift_3.2_vs_3.3.md`
+3.2 vs 3.3: `7DaysRef/HS_Lift_3.2_vs_3.3.md`. 3.4 uses the 3.3 calls.
 
 ## Inherits
 - `Block`

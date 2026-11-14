@@ -16,7 +16,7 @@ Vanilla elevator doors and panels are decoration. HS Lift turns a cabin or vehic
 
 ## Requirements
 
-- 7 Days to Die **3.2** (PC).
+- 7 Days to Die **3.2**, **3.3** or **3.4** (PC).
 - **Harmony** — `0_TFP_Harmony`, ships with the game. Do not remove it.
 - A game restart after installing or replacing `HSLift.dll`.
 - **Multiplayer:** the same `HS_Lift` folder on the **dedicated server and every client**. Lifts live on the server; everyone can see and use cars other players set up.
