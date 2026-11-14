@@ -1,6 +1,8 @@
 # HS Lift changelog
 
-7 Days to Die 3.2 and 3.3. Install on the dedicated server and on every client. Restart the game after updating.
+7 Days to Die 3.2, 3.3 and 3.4. Install on the dedicated server and on every client. Restart the game after updating.
+
+**1.0.36** — Works on 7 Days to Die 3.4 (b9). Thanks to [Germanrazor](https://github.com/Germanrazor/HS_Lift) for the 3.4 port: 3.4 is on the supported list and uses the 3.3 model and network path, and the lift network packet builds against the 3.4 writer. The 3.2 model path still uses the 3.2 call, so the same download keeps working on 3.2 and 3.3. Also fixed on 3.3 and 3.4: the Lift Handbook opens again, and the setup tool click hint shows.
 
 **1.0.35** — Two floors: press E on the inside panel to go up or down. More than two floors: hold E and pick a floor. A tap does nothing when there are more than two. The handbook opens in a large scrolling window so the text stays readable.
 

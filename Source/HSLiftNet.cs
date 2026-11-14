@@ -324,8 +324,8 @@ public abstract class NetPackageHSLiftCore : NetPackage
     public override void write(PooledBinaryWriter bw)
     {
         base.write(bw);
-        // Wir casten den PooledBinaryWriter auf sein Interface oder nutzen den internen Stream, 
-        // um die alten .Write()-Erweiterungsmethoden des Spiels anzusprechen.
+        // 3.4 adds span-based Write extensions that make bw.Write(string) ambiguous at compile time.
+        // PooledBinaryWriter overrides every BinaryWriter.Write on 3.2-3.4, so this still calls the same code.
         System.IO.BinaryWriter w = (System.IO.BinaryWriter)bw;
 
         w.Write(kind);

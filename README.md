@@ -2,8 +2,7 @@
 
 Build your own passenger or vehicle elevators in **7 Days to Die**. You build the cabin or garage pad from vanilla blocks. HS Lift **moves** that structure — it does not spawn a premade car, and it will not chew through blocks in the shaft.
 
-**Version 1.0.34** — dual-load **7 Days to Die 3.2 and 3.3**. Cabin paints use free opaque atlas slots on 3.2; on 3.3 the array is enlarged for the Lift paints.
-UPDATED for Gameversion V3.4.0
+**Version 1.0.36** — one download for **7 Days to Die 3.2, 3.3 and 3.4**. Cabin paints use free opaque atlas slots on 3.2; on 3.3 and 3.4 the array is enlarged for the Lift paints. 3.4 support thanks to [Germanrazor](https://github.com/Germanrazor/HS_Lift).
 
 License: [MIT](LICENSE). Author: Crumb.
 

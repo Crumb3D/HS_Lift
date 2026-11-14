@@ -95,6 +95,7 @@
     <Compile Include="HSLiftMod.cs" />
     <Compile Include="HSGameVersion.cs" />
     <Compile Include="HSGameApi.cs" />
+    <Compile Include="HSInvData.cs" />
     <Compile Include="HSLiftDebug.cs" />
     <Compile Include="HSLiftConfiguration.cs" />
     <Compile Include="HSLiftCommands.cs" />

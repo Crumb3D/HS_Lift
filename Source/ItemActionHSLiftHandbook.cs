@@ -25,7 +25,7 @@ public class ItemActionHSLiftHandbook : ItemAction
     {
         if (!_bReleased || _actionData == null || _actionData.invData == null) return;
         if (Time.time - _actionData.lastUseTime < Delay) return;
-        var player = _actionData.invData.holdingEntity as EntityPlayerLocal;
+        var player = HSInvData.HoldingEntity(_actionData.invData) as EntityPlayerLocal;
         if (player == null || player.playerUI == null || player.playerUI.windowManager == null) return;
         _actionData.lastUseTime = Time.time;
         HSLiftHandbookWindow.TitleKey = TitleKey;
@@ -35,8 +35,9 @@ public class ItemActionHSLiftHandbook : ItemAction
         if (!string.IsNullOrEmpty(clip)) Manager.PlayInsidePlayerHead(clip);
         try
         {
-            if (QuestEventManager.Current != null && _actionData.invData.itemStack != null)
-                QuestEventManager.Current.UsedItem(_actionData.invData.itemStack.itemValue);
+            var held = HSInvData.Stack(_actionData.invData);
+            if (QuestEventManager.Current != null && held != null)
+                QuestEventManager.Current.UsedItem(HSInvData.Val(held));
         }
         catch (System.Exception) { }
     }

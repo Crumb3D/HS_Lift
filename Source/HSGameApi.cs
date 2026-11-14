@@ -19,10 +19,27 @@ public static class HSGameApi
         return CloneBlockModel32(ic, world, bv, worldPos, parent, tex);
     }
 
+    static MethodInfo cloneModel32;
+
+    // 3.2 CloneModel(World, ItemValue, Vector3, Transform, MeshPurpose, TextureFullArray) returns a Transform.
+    // 3.3+ replaced it with CloneModel(ItemValue, Transform, MeshPurpose) returning InstanceHandle, so
+    // bind the 3.2 overload by reflection and the DLL still compiles against 3.3 / 3.4 assemblies.
     static Transform CloneBlockModel32(ItemClass ic, World world, BlockValue bv, Vector3 worldPos, Transform parent, TextureFullArray tex)
     {
-        var handle = ic.CloneModel(bv.ToItemValue(), parent);
-        return handle.Instance != null ? handle.Instance.transform : null;
+        if (cloneModel32 == null)
+        {
+            var methods = typeof(ItemClass).GetMethods(BindingFlags.Public | BindingFlags.Instance);
+            for (int i = 0; i < methods.Length; i++)
+            {
+                if (methods[i].Name != "CloneModel" || methods[i].ReturnType != typeof(Transform)) continue;
+                var p = methods[i].GetParameters();
+                if (p.Length != 6 || p[0].ParameterType != typeof(World) || p[1].ParameterType != typeof(ItemValue)) continue;
+                cloneModel32 = methods[i];
+                break;
+            }
+            if (cloneModel32 == null) return null;
+        }
+        return cloneModel32.Invoke(ic, new object[] { world, bv.ToItemValue(), worldPos, parent, BlockShape.MeshPurpose.World, tex }) as Transform;
     }
 
     static Transform CloneBlockModel33(World world, BlockValue bv, Vector3 worldPos, Transform parent, TextureFullArray tex)
